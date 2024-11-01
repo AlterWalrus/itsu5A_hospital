@@ -5,6 +5,8 @@ visitantes
 pacientes
 visitas
 
+
+Ejemplos para la conexion con SQL
 ------------------------------------------------------------------
 CREATE TABLE Fruits (
     FruitID INTEGER PRIMARY KEY,
