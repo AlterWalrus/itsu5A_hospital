@@ -1,0 +1,13 @@
+Bienvenido al sistema de administración SecureRoom.
+Sesión del 2024-11-02.
+No se pudo conectar con el lector RFID.
+Error: could not open port 'COM6': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2)
+No se pudo conectar con el lector RFID.
+Error: could not open port 'COM6': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2)
+Conexión establecida correctamente.
+Acceso CONCEDIDO para D3210225. 2024-11-02 19:01:02.100278
+Acceso DENEGADO para 335A1FF8. 2024-11-02 19:01:04.551734
+Desconexion con el lector RFID.
+Error: GetOverlappedResult failed (PermissionError(13, 'Access is denied.', None, 5))
+Conexión establecida correctamente.
+

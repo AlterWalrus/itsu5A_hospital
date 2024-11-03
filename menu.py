@@ -1,8 +1,7 @@
 import ttkbootstrap as ttk
 import tkinter.scrolledtext as st
 from datetime import date
-import serial
-import threading
+from rfid_reader import RFID_Reader
 
 class MainMenu(ttk.Frame):
 	def __init__(self, parent, controller):
@@ -33,25 +32,22 @@ class MainMenu(ttk.Frame):
 			btn = ttk.Button(fr, text=button_text, command=lambda t=button_text: controller.show_frame(t))
 			btn.grid(row=i, column=0, padx=10, pady=10, sticky='ew')
 		
-		#Opciones del log
+		#Otras opciones
 		fr = ttk.LabelFrame(self, text='Otras opciones')
 		fr.grid(row=2, column=0, padx=10, pady=10, sticky='ew')
-		ttk.Button(fr, text='Limpiar Log', command=self.log_clear).grid(row=0, column=0, padx=10, pady=10, sticky='ew')
-		ttk.Button(fr, text='Exportar Log', command=self.log_export).grid(row=1, column=0, padx=10, pady=10, sticky='ew')
+		self.btn_rfid_conn = ttk.Button(fr, text='Re-conectar', command=self.retry_rfid_conn)
+		self.btn_rfid_conn.grid(row=0, column=0, padx=10, pady=10, sticky='ew')
+		ttk.Button(fr, text='Limpiar Log', command=self.log_clear).grid(row=1, column=0, padx=10, pady=10, sticky='ew')
+		ttk.Button(fr, text='Exportar Log', command=self.log_export).grid(row=2, column=0, padx=10, pady=10, sticky='ew')
 
-		#Recibir info del arduino
-		self.arduino = None
-		self.connect_arduino()
-	
-	def connect_arduino(self):
-		try:
-			self.arduino = serial.Serial('COM6', 9600)
-			self.log_print("Conexion establecida correctamente.\n", 'ok')
-			thread = threading.Thread(target=self.read_from_arduino, daemon=True)
-			thread.start()
-		except serial.SerialException as e:
-			self.log_print(f"No se pudo conectar con el lector RFID.\n", 'error')
-			self.log_print(f"Error: {e}\n", 'error')
+		#Conexion con el arduino
+		self.reader = RFID_Reader(self)
+
+	def retry_rfid_conn(self):
+		self.reader.connect_arduino()
+
+	def switch_rfid_btn_active(self, enabled):
+		self.btn_rfid_conn['state'] = ttk.NORMAL if enabled else ttk.DISABLED
 
 	def log_print(self, msg, tag='normal'):
 		self.log.configure(state='normal')
@@ -70,14 +66,4 @@ class MainMenu(ttk.Frame):
 				self.log_print("Exportado correctamente.", 'ok')
 		except FileNotFoundError as e:
 			self.log_print("Error al exportar.\n", 'error')
-			self.log_print(f"Error: {e}\n", 'error')
-
-	def read_from_arduino(self):
-		try:
-			while True:
-				data = self.arduino.readline().decode('utf-8')
-				if data:
-					self.log_print(data)
-		except serial.SerialException as e:
-			self.log_print(f"Desconexion con el lector RFID.\n", 'error')
 			self.log_print(f"Error: {e}\n", 'error')
