@@ -63,7 +63,7 @@ class MainMenu(ttk.Frame):
 		try:
 			with open(f'logs/SRlog{date.today()}.txt', 'w', encoding='utf-8') as file:
 				file.write(self.log.get('1.0', ttk.END))
-				self.log_print("Exportado correctamente.", 'ok')
+				self.log_print("Exportado correctamente.\n", 'ok')
 		except FileNotFoundError as e:
 			self.log_print("Error al exportar.\n", 'error')
 			self.log_print(f"Error: {e}\n", 'error')
