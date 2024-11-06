@@ -1,21 +1,21 @@
 import ttkbootstrap as ttk
+from data_window import DataWindow
 
 class TableViewer(ttk.Frame):
 	def __init__(self, parent, controller, table_name):
 		super().__init__(parent)
+
+		self.table_name = table_name
 		self.selected = None
 
 		#Tabla
-		db = {
-			'Médicos': ['CodigoRFID', 'Cedula', 'Horario', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email'],
-			'Enfermeros': ['CodigoRFID', 'Licencia', 'Horario', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email'],
+		self.db = {
+			'Médicos': ['CodigoRFID', 'Cedula', 'HorEntrada', 'HorSalida', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email'],
+			'Enfermeros': ['CodigoRFID', 'Licencia', 'HorEntrada', 'HorSalida', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email'],
 			'Visitantes': ['CodigoRFID', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email'],
-			'Pacientes': ['MaxVisitas', 'Habitacion', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email'],
+			'Pacientes': ['CodigoHEX', 'MaxVisitas', 'Habitacion', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email'],
 			'Visitas': ['Entrada', 'Salida', 'Visitante', 'Paciente']
 		}
-        
-		self.grid_rowconfigure(1, weight=1)
-		self.grid_columnconfigure(0, weight=1)
         
 		ttk.Label(self, text=table_name, font=('Helvetica', 16, 'bold')).grid(row=0, column=0, columnspan=8, padx=10, pady=1, sticky='ew')
 
@@ -45,9 +45,9 @@ class TableViewer(ttk.Frame):
 		self.search_menu = ttk.Menubutton(fr_search, width=12)
 		self.search_menu.grid(row=0, column=0, padx=10, pady=5)
 		menu = ttk.Menu(self.search_menu)
-		for option in db[table_name]:
+		for option in self.db[table_name]:
 			menu.add_radiobutton(label=option, value=option, command=lambda c=option: self.update_column_search(c))
-		self.search_menu.config(menu=menu, text=db[table_name][0])
+		self.search_menu.config(menu=menu, text=self.db[table_name][0])
 
 		fr_search.grid(row=2, column=1, rowspan=2, padx=10, pady=10, sticky='w')
 		fr_search.grid_columnconfigure(0, weight=1)
@@ -58,7 +58,7 @@ class TableViewer(ttk.Frame):
 		ttk.Button(fr_search, text='Buscar', command=self.search).grid(row=0, column=2, padx=10, pady=10)
         
 		#columns = ['CodigoRFID', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email']
-		columns = db[table_name]
+		columns = self.db[table_name]
 		columns_ID = ['Column' + str(i + 1) for i in range(len(columns))]
         
 		self.tree = ttk.Treeview(self, columns=columns_ID, show='headings')
@@ -74,10 +74,12 @@ class TableViewer(ttk.Frame):
 		self.search_menu['text'] = col
 
 	def open_add(self):
-		pass
+		nw = ttk.Toplevel(self)
+		DataWindow(nw, self.table_name, self.db[self.table_name], 'add')
     
 	def open_edit(self):
-		pass
+		nw = ttk.Toplevel(self)
+		DataWindow(nw, self.table_name, self.db[self.table_name], 'edit', self.selected)
     
 	def delete(self):
 		pass

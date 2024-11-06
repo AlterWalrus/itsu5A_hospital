@@ -1,23 +1,21 @@
 import ttkbootstrap as ttk
 from table_viewer import TableViewer
 from menu import MainMenu
-from login import LogIn
+from login import Login
 
 class tkinterApp(ttk.Window):
 	def __init__(self, *args, **kwargs): 
 		ttk.Window.__init__(self, 'SecureRoom', 'superhero', *args, **kwargs)
-
-		#sdaisd
         
 		container = ttk.Frame(self) 
-		container.pack(side='top', fill='both', expand=True) 
+		container.pack(side='top', fill='both', expand=True)
 
 		container.grid_rowconfigure(0, weight=1)
 		container.grid_columnconfigure(0, weight=1)
 
 		self.frames = {}
 
-		self.frames['Login'] = LogIn(container, self)
+		self.frames['Login'] = Login(container, self)
 		self.frames['Login'].grid(row=0, column=0, sticky='nsew')
 		self.frames['MainMenu'] = MainMenu(container, self)
 		self.frames['MainMenu'].grid(row=0, column=0, sticky='nsew')
@@ -28,6 +26,7 @@ class tkinterApp(ttk.Window):
 			self.frames[t].grid(row=0, column=0, sticky='nsew')
 
 		self.show_frame('Login')
+		#self.show_frame('MainMenu')
         
 	def show_frame(self, cont):
 		frame = self.frames[cont]

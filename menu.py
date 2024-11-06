@@ -6,6 +6,7 @@ from rfid_reader import RFID_Reader
 class MainMenu(ttk.Frame):
 	def __init__(self, parent, controller):
 		ttk.Frame.__init__(self, parent)
+		self.controller = controller
         
 		self.grid_rowconfigure(1, weight=1)
 		self.grid_columnconfigure(1, weight=1)
@@ -39,9 +40,13 @@ class MainMenu(ttk.Frame):
 		self.btn_rfid_conn.grid(row=0, column=0, padx=10, pady=10, sticky='ew')
 		ttk.Button(fr, text='Limpiar Log', command=self.log_clear).grid(row=1, column=0, padx=10, pady=10, sticky='ew')
 		ttk.Button(fr, text='Exportar Log', command=self.log_export).grid(row=2, column=0, padx=10, pady=10, sticky='ew')
+		ttk.Button(fr, text='Bloquear App', command=self.back_to_login).grid(row=3, column=0, padx=10, pady=10, sticky='ew')
 
 		#Conexion con el arduino
 		self.reader = RFID_Reader(self)
+
+	def back_to_login(self):
+		self.controller.show_frame('Login')
 
 	def retry_rfid_conn(self):
 		self.reader.connect_arduino()
@@ -63,7 +68,7 @@ class MainMenu(ttk.Frame):
 		try:
 			with open(f'logs/SRlog{date.today()}.txt', 'w', encoding='utf-8') as file:
 				file.write(self.log.get('1.0', ttk.END))
-				self.log_print("Exportado correctamente.", 'ok')
+				self.log_print("Exportado correctamente.\n", 'ok')
 		except FileNotFoundError as e:
 			self.log_print("Error al exportar.\n", 'error')
 			self.log_print(f"Error: {e}\n", 'error')
