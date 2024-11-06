@@ -16,8 +16,13 @@ class TableViewer(ttk.Frame):
 			'Pacientes': ['CodigoHEX', 'MaxVisitas', 'Habitacion', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email'],
 			'Visitas': ['Entrada', 'Salida', 'Visitante', 'Paciente']
 		}
-        
-		ttk.Label(self, text=table_name, font=('Helvetica', 16, 'bold')).grid(row=0, column=0, columnspan=8, padx=10, pady=1, sticky='ew')
+		
+		self.corner_frame = ttk.Frame(self)
+		self.corner_frame.grid(row=0, column=0, sticky='w')
+  
+        #Regresar al menu principal
+		ttk.Button(self.corner_frame, width=16, text='Menú anterior', command=lambda: controller.back_to_main(), style='Outline.TButton').grid(row=0, column=0, padx=10, pady=10)
+		ttk.Label(self.corner_frame, text=table_name, anchor='w', font=('Helvetica', 16, 'bold')).grid(row=0, column=1, columnspan=8, padx=10, pady=1, sticky='ew')
 
 		#Contenedor de acciones
 		fr_actions = ttk.LabelFrame(self, text='Acciones')
@@ -32,12 +37,9 @@ class TableViewer(ttk.Frame):
 		self.btn_edit = ttk.Button(fr_actions, width=12, text='Editar', command=self.open_edit, state='disabled')
 		self.btn_edit.grid(row=0, column=1, padx=10, pady=10)
         
-		#Regresar al menu principal
-		ttk.Button(fr_actions, width=12, text='Menú anterior', command=lambda: controller.back_to_main(), style='Outline.TButton').grid(row=1, column=0, padx=10, pady=10)
-        
 		#Eliminar, no se puede si selected es None
 		self.btn_delete = ttk.Button(fr_actions, width=12, text='Eliminar', command=self.delete, state='disabled')
-		self.btn_delete.grid(row=1, column=1, padx=10, pady=10)
+		self.btn_delete.grid(row=0, column=2, padx=10, pady=10)
         
 		#Buscar
 		fr_search = ttk.LabelFrame(self, text='Buscar por')
@@ -57,6 +59,8 @@ class TableViewer(ttk.Frame):
 		self.search_entry.grid(row=0, column=1, padx=10, pady=10, sticky='ew')
 		ttk.Button(fr_search, text='Buscar', command=self.search).grid(row=0, column=2, padx=10, pady=10)
         
+
+        #Tabla
 		#columns = ['CodigoRFID', 'Nombre', 'Apellido P', 'Apellido M', 'Fecha Nac.', 'Telefono', 'N. Casa', 'Calle', 'Colonia', 'CP', 'Email']
 		columns = self.db[table_name]
 		columns_ID = ['Column' + str(i + 1) for i in range(len(columns))]

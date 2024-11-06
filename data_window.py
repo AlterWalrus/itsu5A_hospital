@@ -29,7 +29,6 @@ class DataWindow(ttk.Frame):
 
 			if field == 'HorEntrada' or field == 'HorSalida':
 				entry = SpinTimePickerOld(self)
-				print("clock set in dude")
 			if field == 'Fecha Nac.':
 				entry = ttk.DateEntry(self)
 			else:

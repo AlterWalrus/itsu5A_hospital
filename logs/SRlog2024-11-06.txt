@@ -1,0 +1,21 @@
+Bienvenido al sistema de administración SecureRoom.
+Sesión del 2024-11-06.
+Conexión establecida correctamente con el COM9.
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:02:50.127689
+Acceso DENEGADO para 335A1FF8. 2024-11-06 17:02:53.020116
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:02:56.443656
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:03:01.950911
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:03:05.809555
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:03:21.062114
+Acceso DENEGADO para 335A1FF8. 2024-11-06 17:03:23.322861
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:03:26.873132
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:03:28.342280
+Acceso DENEGADO para 335A1FF8. 2024-11-06 17:03:31.169545
+Acceso DENEGADO para 335A1FF8. 2024-11-06 17:03:34.011221
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:03:36.341917
+Acceso CONCEDIDO para D3210225. 2024-11-06 17:03:47.561775
+Desconexion con el lector RFID.
+Error: GetOverlappedResult failed (PermissionError(13, 'Acceso denegado.', None, 5))
+Conexión establecida correctamente con el COM9.
+Acceso DENEGADO para 335A1FF8. 2024-11-06 17:05:20.862285
+
