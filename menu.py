@@ -20,28 +20,43 @@ class MainMenu(ttk.Frame):
 		self.log.tag_configure('error', font=('Consolas', 10), foreground='#ff0000')
 		self.log.tag_configure('ok', font=('Consolas', 10), foreground='#00ff00')
 
-		self.log.grid(row=1, column=1, rowspan=8, columnspan=8, padx=10, pady=10, sticky='nsew')
-		self.log.insert(ttk.INSERT, "Bienvenido al sistema de administración SecureRoom.\n", 'normal')
-		self.log.insert(ttk.INSERT, f"Sesión del {date.today()}.\n", 'normal')
+		self.log.grid(row=1, column=1, rowspan=8, columnspan=1, padx=10, pady=10, sticky='nsew')
+		self.log.insert(ttk.INSERT, "Te damos la bienvenida al sistema de administración SecureRoom (nombre provisional).\n", 'normal')
+		self.log.insert(ttk.INSERT, f"Fecha: {date.today()}.\n", 'normal')
 		self.log.configure(state='disabled')
 		
 		#Administracion de tablas
-		fr = ttk.LabelFrame(self, text='Administrar')
+		fr = ttk.LabelFrame(self, text='Registros', width=80)
 		fr.grid(row=1, column=0, padx=10, pady=1, sticky='n')
+
 		buttons = ['Médicos', 'Enfermeros', 'Visitantes', 'Pacientes', 'Visitas']
 		for i, button_text in enumerate(buttons):
-			btn = ttk.Button(fr, text=button_text, command=lambda t=button_text: controller.show_frame(t))
-			btn.grid(row=i, column=0, padx=10, pady=10, sticky='ew')
+			btn = ttk.Button(fr, width=12, text=button_text, command=lambda t=button_text: controller.show_frame(t))
+			#btn.grid(row=i, column=0, padx=10, pady=10, sticky='ew')
+			btn.pack(padx=10, pady=10)
 		
 		#Otras opciones
 		fr = ttk.LabelFrame(self, text='Otras opciones')
-		fr.grid(row=2, column=0, padx=10, pady=10, sticky='ew')
-		self.btn_rfid_conn = ttk.Button(fr, text='Re-conectar', command=self.retry_rfid_conn)
-		self.btn_rfid_conn.grid(row=0, column=0, padx=10, pady=10, sticky='ew')
-		ttk.Button(fr, text='Limpiar Log', command=self.log_clear).grid(row=1, column=0, padx=10, pady=10, sticky='ew')
-		ttk.Button(fr, text='Exportar Log', command=self.log_export).grid(row=2, column=0, padx=10, pady=10, sticky='ew')
-		ttk.Button(fr, text='Bloquear App', command=self.back_to_login).grid(row=3, column=0, padx=10, pady=10, sticky='ew')
+		fr.grid(row=2, column=0, padx=10, pady=10, sticky='n')
 
+		self.btn_rfid_conn = ttk.Button(fr, width=12, text='Re-conectar', command=self.retry_rfid_conn)
+		self.btn_rfid_conn.pack(padx=10, pady=10)
+		ttk.Button(fr, width=12, text='Limpiar Log', command=self.log_clear).pack(padx=10, pady=10)
+		ttk.Button(fr, width=12, text='Exportar Log', command=self.log_export).pack(padx=10, pady=10)
+
+		#Opciones para administradores
+		fr = ttk.LabelFrame(self, text='Administración')
+		fr.grid(row=1, column=2, padx=10, pady=10, sticky='n')
+
+		ttk.Label(fr, text="Sesión de").pack(padx=10)
+		self.admin_curr = ttk.Label(fr, text="Isra", font=('Helvetica', 12, 'bold'))
+		self.admin_curr.pack(padx=10)
+
+		ttk.Button(fr, width=12, text='Bloquear App', command=self.back_to_login).pack(padx=10, pady=10)
+		ttk.Button(fr, width=12, text='Agregar Admin.').pack(padx=10, pady=10)
+		ttk.Button(fr, width=12, text='Editar Admin.').pack(padx=10, pady=10)
+		ttk.Button(fr, width=12, text='Eliminar Admin.').pack(padx=10, pady=10)
+		
 		#Conexion con el arduino
 		self.reader = RFID_Reader(self)
 
@@ -56,6 +71,7 @@ class MainMenu(ttk.Frame):
 
 	def log_print(self, msg, tag='normal'):
 		self.log.configure(state='normal')
+		#self.log.mark_set('insert', "999.0") fix this shit bro
 		self.log.insert(ttk.INSERT, msg, tag)
 		self.log.configure(state='disabled')
 	

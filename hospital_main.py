@@ -6,8 +6,7 @@ from login import Login
 class tkinterApp(ttk.Window):
 	def __init__(self, *args, **kwargs): 
 		ttk.Window.__init__(self, 'SecureRoom', 'superhero', *args, **kwargs)
-        
-		container = ttk.Frame(self) 
+		container = ttk.Frame(self)
 		container.pack(side='top', fill='both', expand=True)
 
 		container.grid_rowconfigure(0, weight=1)
