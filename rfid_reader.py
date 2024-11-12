@@ -23,25 +23,17 @@ class RFID_Reader:
 			self.arduino = serial.Serial(self.ports[comport], 9600)
 			self.thread = threading.Thread(target=self.read_from_arduino, daemon=True)
 			self.thread.start()
-
-			self.parent.log_print(f"Conexión establecida correctamente con el {self.ports[comport]}.\n", 'ok')
-			self.parent.switch_rfid_btn_active(False)
-			
+			self.parent.switch_btn_rfid_active(False)
+			self.parent.rfid_state.config(text='Conectado', foreground='#00ff00')
 		except serial.SerialException as e:
 			if comport < len(self.ports)-1:
 				self.connect_arduino(comport+1)
-			else:
-				self.parent.log_print(f"No se pudo conectar con el lector RFID. {comport+1} intento(s).\n", 'error')
-				self.parent.log_print(f"Error: {e}\n", 'error')
-				self.parent.switch_rfid_btn_active(True)
 
 	def validate_code(self, code):
 		if code in valid_codes:
 			self.arduino.write('1'.encode())
-			self.parent.log_print(f"Acceso CONCEDIDO para {code}. {datetime.now()}\n")
 		else:
 			self.arduino.write('0'.encode())
-			self.parent.log_print(f"Acceso DENEGADO para {code}. {datetime.now()}\n")
 
 	def read_from_arduino(self):
 		try:
@@ -51,6 +43,5 @@ class RFID_Reader:
 					self.validate_code(data)
 				sleep(0.01)
 		except serial.SerialException as e:
-			self.parent.log_print(f"Desconexion con el lector RFID.\n", 'error')
-			self.parent.log_print(f"Error: {e}\n", 'error')
-			self.parent.switch_rfid_btn_active(True)
+			self.parent.switch_btn_rfid_active(True)
+			self.parent.rfid_state.config(text='Desconectado', foreground='#ff0000')

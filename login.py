@@ -1,5 +1,6 @@
 import ttkbootstrap as ttk
 import threading
+from data_window import DataWindow
 
 class Login(ttk.Frame):
 	def __init__(self, parent, controller):
@@ -19,11 +20,12 @@ class Login(ttk.Frame):
 		self.bar = ttk.Progressbar(frame, style='Striped.TProgressbar', length=0, maximum=100)
 		self.bar.pack(pady=10)
 
-		self.admin_pswd = {
-			'Isra': '987',
-			'Omar': '654',
-			'Ruben': '321'
-		}
+		self.admin_pswd = {}
+
+		#Cargar admins
+		admin_table = self.controller.db.get_table('admin')
+		for i in admin_table:
+			self.admin_pswd[i[0]] = i[1]
 
 		#Seccion para la contraseña
 		fr = ttk.LabelFrame(frame, text="Ingresar como administrador")
@@ -46,13 +48,26 @@ class Login(ttk.Frame):
 		self.entry_pswd.bind('<Return>', self.validate)
 
 		#Mensaje de ta bien/ta mal
-		self.alert = ttk.Label(fr, foreground='red', font=('Helvetica', 10))
+		self.alert = ttk.Label(fr, foreground='#ff5555', font=('Helvetica', 10))
 		self.alert.pack()
 
 		ttk.Button(fr, width=12, text='Entrar', command=self.validate).pack(pady=20)
 
 		frame.pack(anchor='center')
 		ttk.Frame(self).pack(expand=True)
+	
+	def admin_add(self):
+		nw = ttk.Toplevel(self)
+		DataWindow(nw, 'Admin', ('Nombre', 'Contraseña'), 'add', self.controller.db)
+	
+	def admin_edit(self):
+		admin = self.btn_admin_selection['text']
+		pswd = self.admin_pswd[self.btn_admin_selection['text']]
+		nw = ttk.Toplevel(self)
+		DataWindow(nw, 'Admin', ('Nombre', 'Contraseña'), 'add', self.controller.db)
+	
+	def admin_delete(self):
+		print('delete')
 
 	def update_admin_btn(self, a):
 		self.btn_admin_selection['text'] = a
@@ -86,5 +101,5 @@ class Login(ttk.Frame):
 			self.bar['value'] += 2
 			self.after(10, self.fill_bar)
 		else:
-			self.after(500, self.controller.back_to_main)
+			self.after(500, lambda f='MainMenu': self.controller.show_frame(f))
 			self.after(1000, self.reset)
