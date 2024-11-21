@@ -1,6 +1,7 @@
 import ttkbootstrap as ttk
 import threading
 from data_window import DataWindow
+from PIL import Image, ImageTk
 
 class Login(ttk.Frame):
 	def __init__(self, parent, controller):
@@ -13,8 +14,8 @@ class Login(ttk.Frame):
 		ttk.Frame(self).pack(expand=True)
 		frame = ttk.Frame(self)
         
-		#Titulo, luego se debera cambiar por logo
-		ttk.Label(frame, text='SecureRoom', font=('Helvetica', 32, 'bold')).pack()
+		self.img_logo = ImageTk.PhotoImage(Image.open('images/patcheck_logo.png'))
+		ttk.Label(frame, image=self.img_logo).pack()
 
 		#Barra de carga (solo se ve bonita, pero no hace un carajo)
 		self.bar = ttk.Progressbar(frame, style='Striped.TProgressbar', length=0, maximum=100)
@@ -58,13 +59,13 @@ class Login(ttk.Frame):
 	
 	def admin_add(self):
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, 'Admin', ('Nombre', 'Contraseña'), 'add', self.controller.db)
+		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), 'add')
 	
 	def admin_edit(self):
 		admin = self.btn_admin_selection['text']
 		pswd = self.admin_pswd[self.btn_admin_selection['text']]
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, 'Admin', ('Nombre', 'Contraseña'), 'add', self.controller.db)
+		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), 'edit', (admin, pswd))
 	
 	def admin_delete(self):
 		print('delete')
@@ -84,8 +85,8 @@ class Login(ttk.Frame):
 			
 			#Animacion bonita wuuu
 			self.bar['length'] = 400
-			self.thread = threading.Thread(target=self.fill_bar, daemon=True)
-			self.thread.start()
+			self.pbar_animation = threading.Thread(target=self.fill_bar, daemon=True)
+			self.pbar_animation.start()
 		else:
 			self.alert['text'] = "Contraseña incorrecta"
 			self.alert['foreground'] = 'red'

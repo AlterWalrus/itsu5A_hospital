@@ -38,18 +38,8 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `hospitalV1`.`Habitacion` (
   `idHabitacion` INT NOT NULL AUTO_INCREMENT,
   `nombreHabitacion` VARCHAR(45) NOT NULL,
+  `disponible` VARCHAR(2) NOT NULL DEFAULT 'SI',
   PRIMARY KEY (`idHabitacion`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `hospitalV1`.`Horario`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `hospitalV1`.`Horario` (
-  `idHorario` INT NOT NULL AUTO_INCREMENT,
-  `horarioInicio` TIME NOT NULL DEFAULT '00:00',
-  `horarioFin` TIME NOT NULL DEFAULT '23:59',
-  PRIMARY KEY (`idHorario`))
 ENGINE = InnoDB;
 
 
@@ -60,14 +50,14 @@ CREATE TABLE IF NOT EXISTS `hospitalV1`.`Paciente` (
   `idPaciente` INT NOT NULL AUTO_INCREMENT,
   `maxVisitas` INT(4) NOT NULL,
   `edadMin` INT(8) NOT NULL DEFAULT 0,
-  `edadMax` INT(8) NOT NULL DEFAULT 120,
+  `edadMax` INT(8) NOT NULL DEFAULT 150,
+  `horarioInicio` TIME NOT NULL DEFAULT '00:00',
+  `horarioFin` TIME NOT NULL DEFAULT '23:59',
   `idDatosPersonales` INT NOT NULL,
   `idHabitacion` INT NOT NULL,
-  `idHorario` INT NOT NULL,
   PRIMARY KEY (`idPaciente`),
   INDEX `fk_Paciente_DatosPersonales_idx` (`idDatosPersonales` ASC),
   INDEX `fk_Paciente_Habitacion1_idx` (`idHabitacion` ASC),
-  INDEX `fk_Paciente_Horario1_idx` (`idHorario` ASC),
   CONSTRAINT `fk_Paciente_DatosPersonales`
     FOREIGN KEY (`idDatosPersonales`)
     REFERENCES `hospitalV1`.`DatosPersonales` (`idDatosPersonales`)
@@ -76,11 +66,6 @@ CREATE TABLE IF NOT EXISTS `hospitalV1`.`Paciente` (
   CONSTRAINT `fk_Paciente_Habitacion1`
     FOREIGN KEY (`idHabitacion`)
     REFERENCES `hospitalV1`.`Habitacion` (`idHabitacion`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Paciente_Horario1`
-    FOREIGN KEY (`idHorario`)
-    REFERENCES `hospitalV1`.`Horario` (`idHorario`)
     ON DELETE CASCADE
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -91,7 +76,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `hospitalV1`.`CodigoRFID` (
   `idCodigoRFID` INT NOT NULL AUTO_INCREMENT,
-  `CodigoRFID` VARCHAR(20) NOT NULL,
+  `codigoRFID` VARCHAR(20) NOT NULL,
   PRIMARY KEY (`idCodigoRFID`))
 ENGINE = InnoDB;
 
@@ -102,13 +87,13 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `hospitalV1`.`Medico` (
   `idMedico` INT NOT NULL AUTO_INCREMENT,
   `cedula` VARCHAR(45) NOT NULL,
+  `horarioInicio` TIME NOT NULL DEFAULT '00:00',
+  `horarioFin` TIME NOT NULL DEFAULT '23:59',
   `idDatosPersonales` INT NOT NULL,
   `idCodigoRFID` INT NOT NULL,
-  `idHorario` INT NOT NULL,
   PRIMARY KEY (`idMedico`),
   INDEX `fk_Medico_DatosPersonales1_idx` (`idDatosPersonales` ASC),
   INDEX `fk_Medico_CodigoRFID1_idx` (`idCodigoRFID` ASC),
-  INDEX `fk_Medico_Horario1_idx` (`idHorario` ASC),
   CONSTRAINT `fk_Medico_DatosPersonales1`
     FOREIGN KEY (`idDatosPersonales`)
     REFERENCES `hospitalV1`.`DatosPersonales` (`idDatosPersonales`)
@@ -117,11 +102,6 @@ CREATE TABLE IF NOT EXISTS `hospitalV1`.`Medico` (
   CONSTRAINT `fk_Medico_CodigoRFID1`
     FOREIGN KEY (`idCodigoRFID`)
     REFERENCES `hospitalV1`.`CodigoRFID` (`idCodigoRFID`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Medico_Horario1`
-    FOREIGN KEY (`idHorario`)
-    REFERENCES `hospitalV1`.`Horario` (`idHorario`)
     ON DELETE CASCADE
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -181,13 +161,13 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `hospitalV1`.`Enfermero` (
   `idEnfermero` INT NOT NULL AUTO_INCREMENT,
   `cedula` VARCHAR(45) NOT NULL,
+  `horarioInicio` TIME NOT NULL DEFAULT '00:00',
+  `horarioFin` TIME NOT NULL DEFAULT '23:59',
   `idDatosPersonales` INT NOT NULL,
   `idCodigoRFID` INT NOT NULL,
-  `idHorario` INT NOT NULL,
   PRIMARY KEY (`idEnfermero`),
   INDEX `fk_Enfermero_DatosPersonales1_idx` (`idDatosPersonales` ASC),
   INDEX `fk_Enfermero_CodigoRFID1_idx` (`idCodigoRFID` ASC),
-  INDEX `fk_Enfermero_Horario1_idx` (`idHorario` ASC),
   CONSTRAINT `fk_Enfermero_DatosPersonales1`
     FOREIGN KEY (`idDatosPersonales`)
     REFERENCES `hospitalV1`.`DatosPersonales` (`idDatosPersonales`)
@@ -196,11 +176,6 @@ CREATE TABLE IF NOT EXISTS `hospitalV1`.`Enfermero` (
   CONSTRAINT `fk_Enfermero_CodigoRFID1`
     FOREIGN KEY (`idCodigoRFID`)
     REFERENCES `hospitalV1`.`CodigoRFID` (`idCodigoRFID`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Enfermero_Horario1`
-    FOREIGN KEY (`idHorario`)
-    REFERENCES `hospitalV1`.`Horario` (`idHorario`)
     ON DELETE CASCADE
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;

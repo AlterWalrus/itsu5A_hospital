@@ -1,13 +1,16 @@
 import ttkbootstrap as ttk
+import datetime
 from PIL import Image, ImageTk
-from rfid_reader import RFID_Reader
+from data_window import AnalysisWindow
+from room import Room
 
 class MainMenu(ttk.Frame):
 	def __init__(self, parent, controller):
 		ttk.Frame.__init__(self, parent)
 		self.controller = controller
         
-		ttk.Label(self, text='SecureRoom', font=('Helvetica', 20, 'bold')).grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
+		self.img_logo = ImageTk.PhotoImage(Image.open('images/patcheck_logo_small.png'))
+		ttk.Label(self, image=self.img_logo).grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
 		
 		#Administracion de tablas
 		fr = ttk.LabelFrame(self, text='Registros', width=80)
@@ -37,7 +40,7 @@ class MainMenu(ttk.Frame):
 		self.btn_rfid_conn.pack(padx=10, pady=5)
 
 		self.img_analyze = ImageTk.PhotoImage(Image.open('images/analyze.png'))
-		ttk.Button(fr, image=self.img_analyze, compound='left', width=12, text='Analizar Tarjeta').pack(padx=10, pady=10)
+		ttk.Button(fr, image=self.img_analyze, compound='left', width=12, text='Analizar tarjeta', command=self.analyze_card).pack(padx=10, pady=10)
 
 		#Opciones para administradores
 		fr = ttk.Frame(self)
@@ -75,29 +78,63 @@ class MainMenu(ttk.Frame):
 		#Panel de informacion general
 		self.grid_rowconfigure(1, weight=1)
 		self.grid_columnconfigure(1, weight=1)
-		fr = ttk.LabelFrame(self, text="Información General")
+		fr = ttk.Frame(self)
 		fr.grid(row=1, column=1, padx=10, pady=10, sticky='nsew', rowspan=2)
 
-		ttk.Label(fr, text="Total de visitas hoy").grid(row=1, column=0, padx=10, pady=2)
-		self.stat_visits_today = ttk.Label(fr, text=0, font=('Helvetica', 12, 'bold'))
-		self.stat_visits_today.grid(row=2, column=0, padx=10, pady=2)
+		fr_sub = ttk.LabelFrame(fr, text="Visitas esta semana")
+		fr_sub.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
 
-		ttk.Label(fr, text="Total de visitas este mes").grid(row=1, column=1, padx=10, pady=2)
-		self.stat_visits_tweek = ttk.Label(fr, text=0, font=('Helvetica', 12, 'bold'))
-		self.stat_visits_tweek.grid(row=2, column=1, padx=10, pady=2)
+		self.cnv_week = ttk.Canvas(fr_sub, height=200, width=280)
+		self.cnv_week.grid(row=0, column=0, padx=10, pady=10)
+		week_data = [12, 32, 42, 13, 11, 14, 23]
+		self.draw_week_stats(self.cnv_week, week_data)
 
-		ttk.Label(fr, text="Total de visitas este año").grid(row=1, column=2, padx=10, pady=2)
-		self.stat_visits_tyear = ttk.Label(fr, text=0, font=('Helvetica', 12, 'bold'))
-		self.stat_visits_tyear.grid(row=2, column=2, padx=10, pady=2)
+		fr_sub = ttk.LabelFrame(fr, text="Visitas en tiempo real")
+		fr_sub.grid(row=0, column=1, padx=10, pady=10, sticky='nsew', rowspan=2)
 
-		#Conexion con el arduino
-		self.reader = RFID_Reader(self)
+		room_names = [i[0] for i in controller.db.get_table('habitacion')]
+		patient_data = controller.db.get_table('paciente')
+		self.rooms = {}
+		self.room_rows = {}
+		for rn in room_names:
+			self.rooms[rn] = Room()
+			self.room_rows[rn] = ttk.Label(fr_sub, image=self.img_room, compound='left', anchor='w', text="")
+			self.room_rows[rn].pack(padx=10, pady=2, expand=True, fill='x')
+
+		for pd in patient_data:
+			room = pd[10]
+			self.rooms[room].put_patient(pd)
+		self.update_room_visits()
+
+	def update_room_visits(self):
+		room_names = [i[0] for i in self.controller.db.get_table('habitacion')]
+		for rn in room_names:
+			if self.rooms[rn].occupied:
+				r: Room = self.rooms[rn]
+				self.room_rows[rn]['text'] = f"{rn} - {r.fname} {r.lname}\t\t{r.get_visitor_number()}/{r.max_visitors}"
+			else:
+				self.room_rows[rn]['text'] = f"{rn} - No ocupada"
+		
+	def draw_week_stats(self, cnv_week, week_data):
+		max_day = max(week_data)
+		days = "LMXJVSD"
+		cnv_week.delete(ttk.ALL)
+		for i in range(7):
+			pc = week_data[i] / max_day
+			color = '#87d1dc' if i == datetime.datetime.today().weekday() else 'white'
+			cnv_week.create_rectangle(i*40, 160, i*40+32, 150-(pc*120), fill=color)
+			cnv_week.create_text(i*40+16, 180, text=days[i], fill=color)
+			cnv_week.create_text(i*40+16, 140-(pc*120), text=week_data[i], fill=color)
+
+	def analyze_card(self):
+		nw = ttk.Toplevel(self)
+		AnalysisWindow(nw, self)
 
 	def back_to_login(self):
 		self.controller.show_frame('Login')
 
 	def retry_rfid_conn(self):
-		self.reader.connect_arduino()
+		self.controller.reader.connect_reader()
 
 	def switch_btn_rfid_active(self, enabled):
 		self.btn_rfid_conn['state'] = ttk.NORMAL if enabled else ttk.DISABLED
