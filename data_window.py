@@ -9,7 +9,7 @@ def center_window(w):
 	w.master.geometry(f"+{x_center}+{y_center}")
 
 class DataWindow(ttk.Frame):
-	def __init__(self, parent, origin, db, table_name, fields, mode, curr_values=None):
+	def __init__(self, parent, origin, db, table_name, fields, field_names, mode, curr_values=None):
 		super().__init__(parent)
 		self.master.iconbitmap("images/icon_dark.ico")
 		self.origin = origin
@@ -33,22 +33,34 @@ class DataWindow(ttk.Frame):
 			if i == half:
 				i = 0
 				col += 2
-			lb = ttk.Label(self, text=field, width=10, anchor='e')
+			lb = ttk.Label(self, text=field_names[fields.index(field)], width=10, anchor='e')
 			lb.grid(row=i+1, column=col, padx=2, pady=5)
 
 			if field == 'codigoRFID' and self.origin.controller.reader.connected:
-				self.btn_rfid = ttk.Button(self, width=10, text='codigoRFID', command=self.switch_rfid_mode, style='Outline.info.TButton')
+				self.btn_rfid = ttk.Button(self, width=10, text='Código RFID', command=self.switch_rfid_mode, style='Outline.info.TButton')
 				self.btn_rfid.grid(row=i+1, column=col, padx=2, pady=5)
 			
 			entry = ttk.Entry(self)
 			if field == 'horarioInicio' or field == 'horarioFin':
 				entry.insert(0, 'HH:MM:SS')
+
 			elif field == 'fechaNacimiento':
 				entry.insert(0, 'AAAA-MM-DD')
+
+			elif field == 'estado' and table_name == 'paciente':
+				entry = ttk.Combobox(self)
+				entry['values'] = db.get_table('estadopaciente')
+				if curr_values:
+					entry.insert(0, curr_values[j])
+				entry['state'] = 'readonly'
+				entry.bind("<<ComboboxSelected>>", self.after_state_selection)
+
 			elif field == 'nombreHabitacion' and table_name == 'paciente':
 				entry = ttk.Combobox(self)
 				entry['values'] = [h[0] for h in db.get_table('habitacion') if h[1] == 'SI']
-				entry['state'] = 'readonly'
+				if curr_values:
+					entry.insert(0, curr_values[j])
+				entry['state'] = 'readonly' if self.entries['estado'].get() != 'ALTA' else 'disabled'
 
 			if curr_values:
 				entry.delete(0, ttk.END)
@@ -74,10 +86,17 @@ class DataWindow(ttk.Frame):
 
 		center_window(self)
 	
+	def after_state_selection(self, event):
+		if self.entries['estado'].get() == 'ALTA':
+			self.entries['nombreHabitacion'].set('')
+			self.entries['nombreHabitacion']['state'] = 'disabled'
+		else:
+			self.entries['nombreHabitacion']['state'] = 'readonly'
+	
 	def switch_rfid_mode(self):
 		rfid = self.origin.controller.reader
 		if self.btn_rfid['text'] == "Esperando...":
-			self.btn_rfid['text'] = "codigoRFID"
+			self.btn_rfid['text'] = "Código RFID"
 			rfid.target_window = None
 			rfid.mode = 1
 		else:
@@ -88,6 +107,10 @@ class DataWindow(ttk.Frame):
 	def data_is_valid(self):
 		values = [v.get() for v in self.entries.values()]
 		for i in range(len(self.fields)):
+			#Si el paciente esta de alta entonces habitacion estara vacio (es el unico campo que tiene permitido estar vacio)
+			if self.fields[i] == 'estado' and values[i] == "ALTA":
+				break
+
 			if values[i] == "":
 				self.alert['text'] = "Todavía hay campos sin llenar."
 				return False
@@ -120,6 +143,7 @@ class DataWindow(ttk.Frame):
 			else:
 				own_fields.append(col)
 		
+		#Aqui tambien se quita el campo de disponible para el insert into 
 		if self.table_name == 'habitacion':
 			own_fields.pop()
 

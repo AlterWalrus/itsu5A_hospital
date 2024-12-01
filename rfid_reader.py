@@ -43,22 +43,20 @@ class RFID_Reader:
 			self.reader.write('0'.encode())
 			return
 
-		main = self.parent.frames['MainMenu']
 		room = 'A1'
-		
-		if code in main.rooms[room].visitors:
-			main.rooms[room].exit_visitor(code)
+		room_id = self.parent.db.get_id('Habitacion', 'nombreHabitacion', room)
+		if code in self.entrance_time.keys():
 			now = datetime.today().replace(microsecond=0)
-			id_code = self.parent.db.get_id_rfid(code)
+			id_code = self.parent.db.get_id('CodigoRFID', 'codigoRFID', code)
 			print(f"{self.entrance_time[code]} - {now} - {1} - {id_code}")
-			self.parent.db.insert_into('visita', ('entrada', 'salida', 'idPaciente', 'idCodigoRFID'), (self.entrance_time[code], now, 1, id_code))
+			self.parent.db.insert_into('visita', ('entrada', 'salida', 'idHabitacion', 'idPaciente', 'idCodigoRFID'), (self.entrance_time[code], now, room_id, 1, id_code))
 			self.parent.frames['Visitas'].update_table()
+			self.entrance_time.pop(code, None)
 		else:
-			main.rooms[room].enter_visitor(code)
 			self.entrance_time[code] = datetime.today().replace(microsecond=0)
 
 		self.reader.write('1'.encode())
-		main.update_room_visits()
+		self.parent.frames['MainMenu'].update_room_visits()
 
 	def process_data(self, data):
 		if self.mode == 1:
@@ -70,9 +68,9 @@ class RFID_Reader:
 			self.target_window.entries['codigoRFID'].insert(0, data)
 			self.target_window.switch_rfid_mode()
 			self.mode = 1
+			self.reader.write('2'.encode())
 		
 		elif self.mode == 3:
-			print(data)
 			self.target_window.lb_rfid['text'] = f"Codigo RFID: {data}"
 			if data in self.valid_codes:
 				ids = self.parent.db.get_ids('codigoRFID')
@@ -87,6 +85,7 @@ class RFID_Reader:
 				self.target_window.lb_title['text'] = "Oops..."
 				self.target_window.lb_info['text'] = "Tarjeta no registrada en el sistema."
 			
+			self.reader.write('2'.encode())
 			self.target_window.btn_ok['text'] = 'Ok'
 			from data_window import center_window
 			center_window(self.target_window)

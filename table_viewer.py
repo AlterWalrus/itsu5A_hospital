@@ -22,6 +22,23 @@ class TableViewer(ttk.Frame):
 		}
 		self.table_name = db_names[frame_name]
 
+		db_fields = {
+			'nombrePersona': 'Nombre',
+			'apellidoPaterno': 'Apellido P.',
+			'apellidoMaterno': 'Apellido M.',
+			'cedula': 'Cédula',
+			'horarioInicio': 'Hor. Entrada',
+			'horarioFin': 'Hor. Salida',
+			'fechaNacimiento': 'Fecha de Nac.',
+			'telefono': 'Teléfono',
+			'codigoRFID': 'Código RFID',
+			'maxVisitas': 'Max. Visitas',
+			'edadMin': 'Edad Min.',
+			'edadMax': 'Edad Max.',
+			'nombreHabitacion': 'Habitación',
+			'estado': 'Estado'
+		}
+
 		#Filtrar (exclusivo de visitas!!!)
 		if frame_name == 'Visitas':
 			fltr = ttk.Frame(self)
@@ -42,7 +59,9 @@ class TableViewer(ttk.Frame):
         
 		self.img_goback = ImageTk.PhotoImage(Image.open('images/go_back.png'))
 		ttk.Button(fr, image=self.img_goback, compound='left', width=16, text='Menú anterior', command=lambda f='MainMenu': controller.show_frame(f), style='Outline.TButton').grid(row=0, column=0, padx=10, pady=5, sticky='ns')
-		ttk.Label(fr, text=frame_name, anchor='w', font=('Helvetica', 16, 'bold')).grid(row=0, column=1, columnspan=8, padx=10, pady=5, sticky='ew')
+		ttk.Label(fr, text=frame_name, anchor='w', font=('Helvetica', 16, 'bold')).grid(row=0, column=1, padx=10, pady=5, sticky='ew')
+		self.lb_nrows = ttk.Label(fr, text="(45 registros)")
+		self.lb_nrows.grid(row=0, column=2)
 
 		#Contenedor de acciones
 		fr_actions = ttk.LabelFrame(self, text='Acciones')
@@ -52,8 +71,9 @@ class TableViewer(ttk.Frame):
 		fr_actions.grid_columnconfigure(2, weight=1)
         
 		#Agregar
-		self.img_add = ImageTk.PhotoImage(Image.open('images/add.png'))
-		ttk.Button(fr_actions, image=self.img_add, compound='left', width=12, text='Registrar', command=self.open_add).grid(row=0, column=0, padx=10, pady=5)
+		if self.table_name != 'visita':
+			self.img_add = ImageTk.PhotoImage(Image.open('images/add.png'))
+			ttk.Button(fr_actions, image=self.img_add, compound='left', width=12, text='Registrar', command=self.open_add).grid(row=0, column=0, padx=10, pady=5)
         
 		#Editar
 		self.img_edit = ImageTk.PhotoImage(Image.open('images/edit.png'))
@@ -76,7 +96,7 @@ class TableViewer(ttk.Frame):
 		if frame_name == 'Visitas':
 			options = ('Cualquier dato', 'Entrada', 'Salida', 'Visitante', 'Paciente')
 		elif frame_name == 'Habitaciones':
-			options = ('Nombre',)
+			options = ('Cualquier dato',)
 
 		for option in options:
 			menu.add_radiobutton(label=option, value=option, command=lambda c=option: self.update_column_search(c))
@@ -94,19 +114,20 @@ class TableViewer(ttk.Frame):
         #Tabla
 		if self.table_name == 'visita':
 			self.columns = self.controller.db.get_columns('view_visitas')
+		elif self.table_name == 'paciente':
+			self.columns = self.controller.db.get_columns('view_pacientes')
 		else:
 			self.columns = self.controller.db.get_table(self.table_name, getcolumns=True)
-
-		#A paciente se le tiene que quitar la ultima columna porque es la de disponible en habitacion
-		if self.table_name == 'paciente':
-			self.columns.pop()
+		
+		#Tablas con los nombre humanizados de las columnas
+		self.column_names = [db_fields[f] if f in db_fields.keys() else f for f in self.columns]
 		
 		columns_ID = ['Column' + str(i + 1) for i in range(len(self.columns))]
-        
 		self.table = ttk.Treeview(self, columns=columns_ID, show='headings')
 		for i in range(len(self.columns)):
-			self.table.column(columns_ID[i], width=70)
-			self.table.heading(columns_ID[i], text=self.columns[i])
+			self.table.column(columns_ID[i], width=80)
+			col = self.column_names[i]
+			self.table.heading(columns_ID[i], text=col)
 		self.table.grid(row=1, column=0, columnspan=12, sticky='nsew', padx=10, pady=5)
 		self.table.bind('<<TreeviewSelect>>', self.item_selected)
 
@@ -118,38 +139,46 @@ class TableViewer(ttk.Frame):
 	def item_selected(self, event):
 		selected_elements = len(self.table.selection())
 		self.switch_btn_edit_active(selected_elements == 1)
-		self.switch_btn_delete_active(selected_elements >= 1)
+		self.switch_btn_delete_active(selected_elements >= 1)		
 
 	def update_table(self, items=None):
 		for i in self.table.get_children():
 			self.table.delete(i)
 		
+		#Si no hay items predefinidos actualizamos la lista de IDs completa (se usa en el filtrado de visitas)
 		if not items:
 			self.table_ids = self.controller.db.get_ids(self.table_name)
-		
+	
 		if items:
 			rows = items
 		elif self.table_name == 'visita':
 			rows = self.controller.db.get_raw_table('view_visitas')
+		elif self.table_name == 'paciente':
+			rows = self.controller.db.get_raw_table('view_pacientes')
 		else:
 			rows = self.controller.db.get_table(self.table_name)
+		self.lb_nrows['text'] = f"({len(rows)} registros)"
 
 		for r in rows:
 			r = list(r)
 			self.table.insert('', ttk.END, values=r)
 
 	def open_add(self):
-		columns = self.columns
+		columns = self.columns[:]
 		if self.table_name == 'habitacion':
 			columns.pop()
+
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, self, self.controller.db, self.table_name, columns, 'add')
+		DataWindow(nw, self, self.controller.db, self.table_name, columns, self.column_names, 'add')
     
 	def open_edit(self):
 		curr_values = self.table.item(self.table.selection()[0])['values']
+		columns = self.columns[:]
+		if self.table_name == 'habitacion':
+			columns.pop()
 
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, self, self.controller.db, self.table_name, self.columns, 'edit', curr_values)
+		DataWindow(nw, self, self.controller.db, self.table_name, columns, self.column_names, 'edit', curr_values)
     
 	def delete(self):
 		table_rows = self.table.get_children()
@@ -196,6 +225,7 @@ class TableViewer(ttk.Frame):
 			rows = []
 			table_ids = []
 			for i in range(len(all_rows)):
+				#Comparar tipo y la seleccion en el MenuButton
 				if all_rows[i][2] == db_names[content]:
 					rows.append(all_rows[i])
 					table_ids.append(self.table_ids[i])

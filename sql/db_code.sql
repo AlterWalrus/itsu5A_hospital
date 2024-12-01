@@ -44,6 +44,16 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
+-- Table `hospitalV1`.`EstadoPaciente`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `hospitalV1`.`EstadoPaciente` (
+  `idEstadoPaciente` INT NOT NULL AUTO_INCREMENT,
+  `estado` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`idEstadoPaciente`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
 -- Table `hospitalV1`.`Paciente`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `hospitalV1`.`Paciente` (
@@ -54,16 +64,37 @@ CREATE TABLE IF NOT EXISTS `hospitalV1`.`Paciente` (
   `horarioInicio` TIME NOT NULL DEFAULT '00:00',
   `horarioFin` TIME NOT NULL DEFAULT '23:59',
   `idDatosPersonales` INT NOT NULL,
-  `idHabitacion` INT NOT NULL,
+  `idEstadoPaciente` INT NOT NULL DEFAULT 1,
   PRIMARY KEY (`idPaciente`),
   INDEX `fk_Paciente_DatosPersonales_idx` (`idDatosPersonales` ASC),
-  INDEX `fk_Paciente_Habitacion1_idx` (`idHabitacion` ASC),
+  INDEX `fk_Paciente_EstadoPaciente1_idx` (`idEstadoPaciente` ASC),
   CONSTRAINT `fk_Paciente_DatosPersonales`
     FOREIGN KEY (`idDatosPersonales`)
     REFERENCES `hospitalV1`.`DatosPersonales` (`idDatosPersonales`)
     ON DELETE CASCADE
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Paciente_Habitacion1`
+  CONSTRAINT `fk_Paciente_EstadoPaciente`
+    FOREIGN KEY (`idEstadoPaciente`)
+    REFERENCES `hospitalV1`.`EstadoPaciente` (`idEstadoPaciente`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `hospitalV1`.`Estancia`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `hospitalV1`.`Estancia` (
+	`idPaciente` INT NOT NULL,
+    `idHabitacion` INT NOT NULL,
+  INDEX `fk_Estancia_Paciente1_idx` (`idPaciente` ASC),
+  INDEX `fk_Estancia_Habitacion1_idx` (`idHabitacion` ASC),
+  CONSTRAINT `fk_Estancia_Paciente`
+    FOREIGN KEY (`idPaciente`)
+    REFERENCES `hospitalV1`.`Paciente` (`idPaciente`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_Estancia_Habitacion`
     FOREIGN KEY (`idHabitacion`)
     REFERENCES `hospitalV1`.`Habitacion` (`idHabitacion`)
     ON DELETE CASCADE
@@ -137,12 +168,19 @@ CREATE TABLE IF NOT EXISTS `hospitalV1`.`Visita` (
   `idVisita` INT NOT NULL AUTO_INCREMENT,
   `entrada` DATETIME(6) NOT NULL,
   `salida` DATETIME(6) NOT NULL,
+  `idHabitacion` INT NOT NULL,
   `idPaciente` INT NOT NULL,
   `idCodigoRFID` INT NOT NULL,
   PRIMARY KEY (`idVisita`),
-  INDEX `fk_Registro_Paciente1_idx` (`idPaciente` ASC),
-  INDEX `fk_Registro_CodigoRFID1_idx` (`idCodigoRFID` ASC),
-  CONSTRAINT `fk_Registro_Paciente1`
+  INDEX `fk_Visita_Habitacion1_idx` (`idHabitacion` ASC),
+  INDEX `fk_Visita_Paciente1_idx` (`idPaciente` ASC),
+  INDEX `fk_Visita_CodigoRFID1_idx` (`idCodigoRFID` ASC),
+  CONSTRAINT `fk_Visita_Habitacion1`
+    FOREIGN KEY (`idHabitacion`)
+    REFERENCES `hospitalV1`.`Habitacion` (`idHabitacion`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_Visita_Paciente1`
     FOREIGN KEY (`idPaciente`)
     REFERENCES `hospitalV1`.`Paciente` (`idPaciente`)
     ON DELETE CASCADE

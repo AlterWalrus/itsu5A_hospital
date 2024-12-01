@@ -3,6 +3,7 @@ import datetime
 from PIL import Image, ImageTk
 from data_window import AnalysisWindow
 from room import Room
+import random
 
 class MainMenu(ttk.Frame):
 	def __init__(self, parent, controller):
@@ -11,10 +12,15 @@ class MainMenu(ttk.Frame):
         
 		self.img_logo = ImageTk.PhotoImage(Image.open('images/patcheck_logo_small.png'))
 		ttk.Label(self, image=self.img_logo).grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
+
+		self.grid_rowconfigure(1, weight=1)
+		self.grid_rowconfigure(2, weight=1)
+		self.grid_columnconfigure(0, weight=1)
+		self.grid_columnconfigure(1, weight=1)
 		
 		#Administracion de tablas
 		fr = ttk.LabelFrame(self, text='Registros', width=80)
-		fr.grid(row=1, column=0, padx=10, pady=1, sticky='n')
+		fr.grid(row=1, column=0, padx=10, pady=1, sticky='nsew')
 
 		self.img_person = ImageTk.PhotoImage(Image.open('images/person_wfile.png'))
 		self.img_visits = ImageTk.PhotoImage(Image.open('images/visits.png'))
@@ -26,21 +32,21 @@ class MainMenu(ttk.Frame):
 			elif button_text == 'Habitaciones':
 				img = self.img_room
 			btn = ttk.Button(fr, image=img, compound='left', width=12, text=button_text, command=lambda t=button_text: controller.show_frame(t))
-			btn.pack(padx=10, pady=10)
+			btn.pack(padx=10, pady=10, expand=True, fill='both')
 		
 		#Opciones de LectorRFID
 		fr = ttk.LabelFrame(self, text='Lector RFID')
-		fr.grid(row=2, column=0, padx=10, pady=10, sticky='s')
+		fr.grid(row=2, column=0, padx=10, pady=10, sticky='sew')
 		
 		self.rfid_state = ttk.Label(fr, text='Desconectado', foreground='#ff5555')
 		self.rfid_state.pack(pady=5)
 
 		self.img_reconn = ImageTk.PhotoImage(Image.open('images/re_connect.png'))
 		self.btn_rfid_conn = ttk.Button(fr, image=self.img_reconn, compound='left', width=12, text='Re-conectar', command=self.retry_rfid_conn)
-		self.btn_rfid_conn.pack(padx=10, pady=5)
+		self.btn_rfid_conn.pack(padx=10, pady=5, expand=True, fill='both')
 
 		self.img_analyze = ImageTk.PhotoImage(Image.open('images/analyze.png'))
-		ttk.Button(fr, image=self.img_analyze, compound='left', width=12, text='Analizar tarjeta', command=self.analyze_card).pack(padx=10, pady=10)
+		ttk.Button(fr, image=self.img_analyze, compound='left', width=12, text='Analizar tarjeta', command=self.analyze_card).pack(padx=10, pady=10, expand=True, fill='both')
 
 		#Opciones para administradores
 		fr = ttk.Frame(self)
@@ -76,55 +82,105 @@ class MainMenu(ttk.Frame):
 		self.btn_session['menu'] = menu
 
 		#Panel de informacion general
-		self.grid_rowconfigure(1, weight=1)
-		self.grid_columnconfigure(1, weight=1)
 		fr = ttk.Frame(self)
 		fr.grid(row=1, column=1, padx=10, pady=10, sticky='nsew', rowspan=2)
 
-		fr_sub = ttk.LabelFrame(fr, text="Visitas esta semana")
+		#Grafica de la semana
+		fr_sub = ttk.LabelFrame(fr, text="Actividad últimos siete días")
 		fr_sub.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
 
-		self.cnv_week = ttk.Canvas(fr_sub, height=200, width=280)
-		self.cnv_week.grid(row=0, column=0, padx=10, pady=10)
-		week_data = [12, 32, 42, 13, 11, 14, 23]
-		self.draw_week_stats(self.cnv_week, week_data)
+		self.cnv_week = ttk.Canvas(fr_sub, height=240, width=360)
+		self.cnv_week.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+		self.week_data = [random.randint(0, 100) for i in range(7)]
+		self.draw_week_stats(360, 240)
 
+		#Grafica de hoy
+		fr_sub = ttk.LabelFrame(fr, text="Actividad hoy")
+		fr_sub.grid(row=0, column=1, padx=10, pady=10, sticky='nsew')
+
+		self.cnv_today = ttk.Canvas(fr_sub, height=240, width=400)
+		self.cnv_today.grid(row=0, column=1, padx=10, pady=10, sticky='nsew')
+		self.today_data = [random.randint(0, 20) for i in range(datetime.datetime.today().hour+1)]
+		print(self.today_data)
+		self.draw_today_stats(400, 240)
+
+		#Vistas de habitaciones
 		fr_sub = ttk.LabelFrame(fr, text="Visitas en tiempo real")
-		fr_sub.grid(row=0, column=1, padx=10, pady=10, sticky='nsew', rowspan=2)
+		fr_sub.grid(row=1, column=0, padx=10, pady=10, sticky='nsew', columnspan=2, rowspan=2)
 
-		room_names = [i[0] for i in controller.db.get_table('habitacion')]
-		patient_data = controller.db.get_table('paciente')
-		self.rooms = {}
-		self.room_rows = {}
-		for rn in room_names:
-			self.rooms[rn] = Room()
-			self.room_rows[rn] = ttk.Label(fr_sub, image=self.img_room, compound='left', anchor='w', text="")
-			self.room_rows[rn].pack(padx=10, pady=2, expand=True, fill='x')
+		self.cnv_rooms = ttk.Canvas(fr_sub, height=180, width=640)
+		self.cnv_rooms.grid(row=0, column=1, padx=10, pady=10, sticky='nsew')
+		#self.draw_rooms_state(400, 240)
 
+		self.controller.bind('<Configure>', self.resizing)
+
+	def draw_rooms_state(self, w, h):
+		self.cnv_rooms.delete(ttk.ALL)
+		self.cnv_rooms.config(width=w, height=h)
+		patient_data = self.controller.db.get_table('paciente')
+		
 		for pd in patient_data:
 			room = pd[10]
-			self.rooms[room].put_patient(pd)
-		self.update_room_visits()
-
-	def update_room_visits(self):
-		room_names = [i[0] for i in self.controller.db.get_table('habitacion')]
-		for rn in room_names:
-			if self.rooms[rn].occupied:
-				r: Room = self.rooms[rn]
-				self.room_rows[rn]['text'] = f"{rn} - {r.fname} {r.lname}\t\t{r.get_visitor_number()}/{r.max_visitors}"
-			else:
-				self.room_rows[rn]['text'] = f"{rn} - No ocupada"
+			if room != 'ALTA':
+				print(room)
 		
-	def draw_week_stats(self, cnv_week, week_data):
-		max_day = max(week_data)
-		days = "LMXJVSD"
-		cnv_week.delete(ttk.ALL)
+	def draw_today_stats(self, w, h):
+		self.cnv_today.delete(ttk.ALL)
+		self.cnv_today.config(width=w, height=h)
+
+		curr_hour = len(self.today_data)
+		lnw = round(w*0.04)		#16, these numbers in the  comments are the result of the mul assuming w and h are 400 and 240
+		lnh = round(h*0.833)	#200 and yes, the numbers were calculated by hand with my phone, sorry future's isra for this mess
+		tdy_max = max(max(self.today_data), 1)
+		margin = 20
+
+		self.cnv_today.create_line(margin, 20, w, 20, fill='white')
+		self.cnv_today.create_line(margin, (lnh+20)/2, w, (lnh+20)/2, fill='gray')
+		self.cnv_today.create_line(margin, lnh, w, lnh, fill='white')
+		
+		self.cnv_today.create_text(10, 20, text=tdy_max, fill='white', justify='left', font=('Helvetica', 10, 'bold'))
+
+		for i in range(1, curr_hour):
+			y1 = lnh - (self.today_data[i-1]/tdy_max) * (lnh*0.9)
+			y2 = lnh - (self.today_data[i]/tdy_max) * (lnh*0.9)
+			self.cnv_today.create_line((i-1)*lnw+margin, y1, i*lnw+margin, y2, fill='white', width=3)
+
+		for i in range(24):
+			if (i) % 2 == 0:
+				self.cnv_today.create_line((i)*lnw+margin, lnh, (i)*lnw+margin, lnh+12, fill='white')
+				self.cnv_today.create_text((i)*lnw+margin, lnh+20, text=f"{i}:00", fill='white', justify='center', font=('Helvetica', round(w*0.013)))
+			else:
+				self.cnv_today.create_line((i)*lnw+margin, lnh, (i)*lnw+margin, lnh+8, fill='gray')
+			
+	def draw_week_stats(self, w, h,):
+		self.cnv_week.delete(ttk.ALL)
+		self.cnv_week.config(width=w, height=h)
+
+		max_day = max(max(self.week_data), 1)
+		curr_day = datetime.datetime.today().weekday()+1
+		days = "LMXJVSDLMXJVSD"
+		bar_w = round(w*0.14)	#50
+		bar_h = round(h*0.833)	#200
+
 		for i in range(7):
-			pc = week_data[i] / max_day
-			color = '#87d1dc' if i == datetime.datetime.today().weekday() else 'white'
-			cnv_week.create_rectangle(i*40, 160, i*40+32, 150-(pc*120), fill=color)
-			cnv_week.create_text(i*40+16, 180, text=days[i], fill=color)
-			cnv_week.create_text(i*40+16, 140-(pc*120), text=week_data[i], fill=color)
+			percent = self.week_data[i] / max_day
+			color = '#87d1dc' if i == 6 else 'white'
+			self.cnv_week.create_text(i*bar_w+(bar_w*0.4), (bar_h-25)-(percent*(bar_h-40)), text=self.week_data[i], fill=color, font=('Helvetica', 12, 'bold'))
+			self.cnv_week.create_rectangle(i*bar_w, bar_h, i*bar_w+(bar_w-8), (bar_h-10)-(percent*(bar_h-40)), fill=color)
+			self.cnv_week.create_text(i*bar_w+(bar_w*0.4), bar_h+20, text=days[i+curr_day], fill=color, font=('Helvetica', 12, 'bold'))
+	
+	def after_resize(self):
+		w = self.controller.winfo_width()
+		h = self.controller.winfo_height()
+		self.draw_week_stats(round(w*0.323), round(h*0.363))
+		self.draw_today_stats(round(w*0.359), round(h*0.363))
+		self.draw_rooms_state(round(w*0.5745), round(h*0.273))
+
+	def resizing(self, event):
+		if event.widget == self.controller:
+			if getattr(self, "_after_id", None):
+				self.controller.after_cancel(self._after_id)
+			self._after_id = self.controller.after(100, self.after_resize)
 
 	def analyze_card(self):
 		nw = ttk.Toplevel(self)

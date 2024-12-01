@@ -21,14 +21,14 @@ VIEW `view_visitas` AS
         COALESCE(`med_data`.`apellidoPaterno`,
                 `enf_data`.`apellidoPaterno`,
                 `vis_data`.`apellidoPaterno`) AS `visitaApellido`,
-        `pac_habi`.`nombreHabitacion` AS `pacienteHabitacion`,
+        `habi`.`nombreHabitacion` AS `pacienteHabitacion`,
         `pac_data`.`nombrePersona` AS `pacienteNombre`,
         `pac_data`.`apellidoPaterno` AS `pacienteApellido`
     FROM
         ((((((((((((`visita` `v`
         JOIN `paciente` `p` ON (`v`.`idPaciente` = `p`.`idPaciente`))
         JOIN `datospersonales` `pac_data` ON (`p`.`idDatosPersonales` = `pac_data`.`idDatosPersonales`))
-        JOIN `habitacion` `pac_habi` ON (`p`.`idHabitacion` = `pac_habi`.`idHabitacion`))
+        JOIN `habitacion` `habi` ON (`v`.`idHabitacion` = `habi`.`idHabitacion`))
         LEFT JOIN `medico` `med` ON (`v`.`idCodigoRFID` = `med`.`idCodigoRFID`))
         LEFT JOIN `datospersonales` `med_data` ON (`med`.`idDatosPersonales` = `med_data`.`idDatosPersonales`))
         LEFT JOIN `codigorfid` `med_rfid` ON (`med`.`idCodigoRFID` = `med_rfid`.`idCodigoRFID`))

@@ -35,6 +35,21 @@ class MySQL_Conn:
 			print(f"Error en MySQL: {e}")
 		return -1
 	
+	#Editar valor a la tabla
+	def update(self, table_name, args_names, args_values):
+		columns = ', '.join(args_names)
+		placeholders = ', '.join(['%s'] * len(args_values))
+		query = f"INSERT INTO {table_name}({columns}) VALUES({placeholders});"
+		try:
+			self.dbcursor.execute(query, args_values)
+			new_id = self.dbcursor._last_insert_id
+			self.conn.commit()
+			print(f"query exitosa: {query}: {args_values}")
+			return new_id
+		except Error as e:
+			print(f"Error en MySQL: {e}")
+		return -1
+
 	#Eliminar (no borrar... o si? a mi que carajos me importa) valor de tabla
 	def delete(self, table_name, ids):
 		query = ""
@@ -120,10 +135,10 @@ class MySQL_Conn:
 			print(f"Error en MySQL: {e}")
 		return []
 	
-	def get_id_rfid(self, code):
-		query = "SELECT idCodigoRFID FROM CodigoRFID WHERE codigoRFID = %s;"
+	def get_id(self, table_name, field, value):
+		query = f"SELECT id{table_name} FROM {table_name} WHERE {field} = %s;"
 		try:
-			self.dbcursor.execute(query, (code,))
+			self.dbcursor.execute(query, (value,))
 			return self.dbcursor.fetchall()[0][0]
 		except Error as e:
 			print(f"Error en MySQL: {e}")
@@ -141,7 +156,6 @@ class MySQL_Conn:
 		return result
 
 	def get_rfid_owner(self, id_rfid):
-		result = []
 		query = f'''
 				SELECT 'medico' AS tipo, idMedico AS id FROM medico WHERE idCodigoRFID = {id_rfid} UNION
 				SELECT 'enfermero' AS tipo, idEnfermero AS id FROM enfermero WHERE idCodigoRFID = {id_rfid} UNION
@@ -160,4 +174,4 @@ class MySQL_Conn:
 			return d
 		except Error as e:
 			print(f"Error en MySQL: {e}")
-		return result
+		return -1
