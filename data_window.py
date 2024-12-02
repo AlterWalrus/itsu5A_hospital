@@ -9,7 +9,7 @@ def center_window(w):
 	w.master.geometry(f"+{x_center}+{y_center}")
 
 class DataWindow(ttk.Frame):
-	def __init__(self, parent, origin, db, table_name, fields, field_names, mode, curr_values=None):
+	def __init__(self, parent, origin, db, table_name, fields, field_names, mode, id=0, curr_values=None):
 		super().__init__(parent)
 		self.master.iconbitmap("images/icon_dark.ico")
 		self.origin = origin
@@ -17,6 +17,9 @@ class DataWindow(ttk.Frame):
 		self.pack(fill='x', expand=True)
 		self.table_name = table_name
 		self.fields = fields
+		self.id = id
+		self.field_names = field_names
+		self.mode = mode
 
 		self.btn_rfid = None
 
@@ -107,24 +110,47 @@ class DataWindow(ttk.Frame):
 	def data_is_valid(self):
 		values = [v.get() for v in self.entries.values()]
 		for i in range(len(self.fields)):
+			field = self.fields[i]
+			value = values[i]
+
 			#Si el paciente esta de alta entonces habitacion estara vacio (es el unico campo que tiene permitido estar vacio)
-			if self.fields[i] == 'estado' and values[i] == "ALTA":
+			if field == 'estado' and value == "ALTA":
 				break
 
-			if values[i] == "":
+			if value == "":
 				self.alert['text'] = "Todavía hay campos sin llenar."
 				return False
 			
-			if self.fields[i] == 'fechaNacimiento':
+			if field == 'codigoRFID':
+				if self.mode == 'add':
+					codes = [c[0] for c in self.db.get_table('codigoRFID')]
+					if value in codes:
+						self.alert['text'] = "Código RFID ya registrado."
+						return False
+				else:
+					code_in_db = self.db.get_table(self.table_name, id=self.id)[0][-1]
+					codes = [c[0] for c in self.db.get_table('codigoRFID')]
+					if value in codes and value != code_in_db:
+						self.alert['text'] = "Código RFID ya registrado."
+						return False
+			
+			if field in ('maxVisitas', 'edadMin', 'edadMax'):
 				try:
-					datetime.fromisoformat(values[i])
+					int(value)
+				except:
+					self.alert['text'] = f"{self.field_names[i]} debe ser un número."
+					return False
+
+			if field == 'fechaNacimiento':
+				try:
+					datetime.fromisoformat(value)
 				except ValueError:
 					self.alert['text'] = "Fecha inválida."
 					return False
 			
-			if self.fields[i] == 'horarioInicio' or self.fields[i] == 'horarioFin':
+			if field == 'horarioInicio' or field == 'horarioFin':
 				try:
-					datetime.strptime(values[i], '%H:%M:%S')
+					datetime.strptime(value, '%H:%M:%S')
 				except ValueError:
 					self.alert['text'] = "Horario inválido."
 					return False
@@ -164,17 +190,69 @@ class DataWindow(ttk.Frame):
 		values.extend(fks_dict.values())
 
 		self.db.insert_into(self.table_name, own_fields, values)
-		if hasattr(self.origin, 'update_table'):
-			self.origin.update_table()
 		self.close()
 
 	def confirm_update(self):
-		pass
+		if not self.data_is_valid():
+			return
+		
+		state = {
+			'ALTA': 1,
+			'INTERNADO': 2
+		}
+		
+		#Conseguir los IDs de las weas a actualizar
+		#print(self.db.get_raw_data(self.table_name, self.id))
+		
+		#Separar columnas propias y FKs
+		fks = []
+		own_fields = []
+		for col in self.db.get_columns(self.table_name)[1:]:
+			if col.startswith('id') and col != 'idEstadoPaciente':
+				fks.append(col)
+			else:
+				own_fields.append(col)
+
+		patient_in_room = self.db.get_id_from_room(self.id)
+		print(patient_in_room)
+		if 'estado' in self.entries.keys():
+			if self.entries['estado'].get() == 'INTERNADO':
+				room_id = self.db.get_id('Habitacion', 'nombreHabitacion', self.entries['nombreHabitacion'].get())
+				if patient_in_room != -1:
+					self.db.update_from_room(self.id, room_id)
+					print("paciente en habitacion, estancia editada")
+				else:
+					self.db.insert_into_room(self.id, room_id)
+					print("paciente NO en habitacion, estancia insertada")
+			else:
+				if patient_in_room != -1:
+					self.db.delete_from_room(self.id)
+					print("moviendo paciente de la habitacion, estancia borrada")
+		
+		#Obtener valores para columnas propias
+		if self.table_name == 'habitacion':
+			own_fields.pop()
+		values = []
+		for f in own_fields:
+			if f == 'idEstadoPaciente':
+				values.append(state[self.entries['estado'].get()])
+				continue
+			values.append(self.entries[f].get())
+
+		#Actualizar datos propios
+		self.db.update(self.table_name, self.id, own_fields, values)
+		self.close()
 
 	def close(self):
+		if hasattr(self.origin, 'update_table'):
+			self.origin.update_table()
+		if hasattr(self.origin, 'update_admin_list'):
+			self.origin.update_admin_list()
+
 		if self.btn_rfid:
 			if self.btn_rfid['text'] == "Esperando...":
 				self.switch_rfid_mode()
+
 		self.master.destroy()
 
 class ConfirmationWindow(ttk.Frame):

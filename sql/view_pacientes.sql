@@ -4,6 +4,11 @@ CREATE
     SQL SECURITY DEFINER
 VIEW `view_pacientes` AS
     SELECT
+		`p`.`maxVisitas` AS `maxVisitas`,
+        `p`.`edadMin` AS `edadMin`,
+        `p`.`edadMax` AS `edadMax`,
+        `p`.`horarioInicio` AS `horarioInicio`,
+        `p`.`horarioFin` AS `horarioFin`,
         `dp`.`nombrePersona` AS `nombrePersona`,
         `dp`.`apellidoPaterno` AS `apellidoPaterno`,
         `dp`.`apellidoMaterno` AS `apellidoMaterno`,
@@ -17,3 +22,4 @@ VIEW `view_pacientes` AS
         JOIN `estadopaciente` `ep` ON (`p`.`idEstadoPaciente` = `ep`.`idEstadoPaciente`))
         LEFT JOIN `estancia` `e` ON (`p`.`idPaciente` = `e`.`idPaciente`))
         LEFT JOIN `habitacion` `h` ON (`e`.`idHabitacion` = `h`.`idHabitacion`))
+	ORDER BY `p`.`idPaciente`

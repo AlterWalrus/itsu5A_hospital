@@ -1,12 +1,13 @@
 import ttkbootstrap as ttk
 import threading
-from data_window import DataWindow
+from data_window import DataWindow, ConfirmationWindow
 from PIL import Image, ImageTk
 
 class Login(ttk.Frame):
 	def __init__(self, parent, controller):
 		ttk.Frame.__init__(self, parent)
 		self.controller = controller
+		self.table_name = 'Admin'
 
 		self.grid_rowconfigure(1, weight=1)
 		self.grid_columnconfigure(1, weight=1)
@@ -22,12 +23,7 @@ class Login(ttk.Frame):
 		self.bar.pack(pady=10)
 
 		self.admin_pswd = {}
-
-		#Cargar admins
-		admin_table = self.controller.db.get_table('admin')
-		for i in admin_table:
-			self.admin_pswd[i[0]] = i[1]
-
+		
 		#Seccion para la contraseña
 		fr = ttk.LabelFrame(frame, text="Ingresar como administrador")
 		fr.pack()
@@ -37,10 +33,8 @@ class Login(ttk.Frame):
 		self.btn_admin_selection = ttk.Menubutton(fr, width=20, style='info.Outline.TMenubutton')
 		self.btn_admin_selection.pack(pady=1)
 
-		menu = ttk.Menu(self.btn_admin_selection)
-		for admin in self.admin_pswd:
-			menu.add_radiobutton(label=admin, value=admin, command=lambda c=admin: self.update_admin_btn(c))
-		self.btn_admin_selection.config(menu=menu, text=list(self.admin_pswd)[0])
+		#Cargar admins
+		self.update_admin_list()
 
 		ttk.Label(fr, text='Contraseña').pack(pady=5)
 
@@ -57,18 +51,30 @@ class Login(ttk.Frame):
 		frame.pack(anchor='center')
 		ttk.Frame(self).pack(expand=True)
 	
+	def update_admin_list(self):
+		admin_table = self.controller.db.get_table('admin')
+		for i in admin_table:
+			self.admin_pswd[i[0]] = i[1]
+		
+		menu = ttk.Menu(self.btn_admin_selection)
+		for admin in self.admin_pswd:
+			menu.add_radiobutton(label=admin, value=admin, command=lambda c=admin: self.update_admin_btn(c))
+		self.btn_admin_selection.config(menu=menu, text=list(self.admin_pswd)[0])
+	
 	def admin_add(self):
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), 'add')
+		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), ('Nombre', 'Contraseña'), 'add')
 	
 	def admin_edit(self):
 		admin = self.btn_admin_selection['text']
 		pswd = self.admin_pswd[self.btn_admin_selection['text']]
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), 'edit', (admin, pswd))
+		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), ('Nombre', 'Contraseña'), 'edit', (admin, pswd))
 	
 	def admin_delete(self):
-		print('delete')
+		id = self.controller.db.get_id('admin', 'nombre', self.btn_admin_selection['text'])
+		nw = ttk.Toplevel(self)
+		ConfirmationWindow(nw, self, self.controller.db, 1, (id,))
 
 	def update_admin_btn(self, a):
 		self.btn_admin_selection['text'] = a

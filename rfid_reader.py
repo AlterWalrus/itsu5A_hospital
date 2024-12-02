@@ -39,24 +39,47 @@ class RFID_Reader:
 				self.connect_reader(comport+1)
 
 	def validate_code(self, code):
+		#Revisar si el codico esta en la base de datos
 		if code not in self.valid_codes:
 			self.reader.write('0'.encode())
+			self.reader.write("Codigo no registrado".encode())
 			return
 
+		#Revisar si hay alguien en la habitacion hospedado en primer lugar
 		room = 'A1'
 		room_id = self.parent.db.get_id('Habitacion', 'nombreHabitacion', room)
+		patient_id = self.parent.db.get_id_from_room(room_id, get_room=False)
+		
+		if patient_id == -1:
+			self.reader.write('0'.encode())
+			self.reader.write("Habitacionvacia".encode())
+			return
+		
+		#Si se es medico las demas validaciones son burladas
+		rfid_id = self.parent.db.get_id('CodigoRFID', 'codigoRFID', code)
+		rfid_owner = self.parent.db.get_rfid_owner(rfid_id)
+		if 'cedula' in rfid_owner:
+			self.checkin(room_id, patient_id, code)
+			return
+
+		#Se hace el check in
+		self.checkin(room_id, patient_id, code)
+
+
+	def checkin(self, room_id, patient_id, code):
 		if code in self.entrance_time.keys():
 			now = datetime.today().replace(microsecond=0)
 			id_code = self.parent.db.get_id('CodigoRFID', 'codigoRFID', code)
 			print(f"{self.entrance_time[code]} - {now} - {1} - {id_code}")
-			self.parent.db.insert_into('visita', ('entrada', 'salida', 'idHabitacion', 'idPaciente', 'idCodigoRFID'), (self.entrance_time[code], now, room_id, 1, id_code))
+			self.parent.db.insert_into('visita', ('entrada', 'salida', 'idHabitacion', 'idPaciente', 'idCodigoRFID'), (self.entrance_time[code], now, room_id, patient_id, id_code))
 			self.parent.frames['Visitas'].update_table()
 			self.entrance_time.pop(code, None)
+			self.reader.write('3'.encode())
+			print("ADIOS uwu")
 		else:
 			self.entrance_time[code] = datetime.today().replace(microsecond=0)
-
-		self.reader.write('1'.encode())
-		self.parent.frames['MainMenu'].update_room_visits()
+			self.reader.write('1'.encode())
+			print("HOLIS owo")
 
 	def process_data(self, data):
 		if self.mode == 1:
@@ -69,6 +92,7 @@ class RFID_Reader:
 			self.target_window.switch_rfid_mode()
 			self.mode = 1
 			self.reader.write('2'.encode())
+			print("BEEP")
 		
 		elif self.mode == 3:
 			self.target_window.lb_rfid['text'] = f"Codigo RFID: {data}"

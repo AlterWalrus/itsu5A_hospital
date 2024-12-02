@@ -1,15 +1,15 @@
-DROP TRIGGER IF EXISTS on_insert_paciente;
-DROP TRIGGER IF EXISTS on_delete_paciente;
-DROP TRIGGER IF EXISTS on_update_paciente;
+DROP TRIGGER IF EXISTS on_insert_estancia;
+DROP TRIGGER IF EXISTS on_delete_estancia;
+DROP TRIGGER IF EXISTS on_update_estancia;
 
 DROP TRIGGER IF EXISTS on_delete_medico;
 DROP TRIGGER IF EXISTS on_delete_enfermero;
 DROP TRIGGER IF EXISTS on_delete_visitante;
 
--- PACIENTE
+-- PACIENTE (Actualizar disponibilidad de habitaciones cada q metamos a un wn ahi)
 DELIMITER //
-CREATE TRIGGER on_insert_paciente
-BEFORE INSERT ON paciente
+CREATE TRIGGER on_insert_estancia
+BEFORE INSERT ON estancia
 FOR EACH ROW
 BEGIN
 	UPDATE habitacion
@@ -19,22 +19,19 @@ END //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER on_delete_paciente
-BEFORE DELETE ON paciente
+CREATE TRIGGER on_delete_estancia
+BEFORE DELETE ON estancia
 FOR EACH ROW
 BEGIN
 	UPDATE habitacion
     SET disponible = 'SI'
     WHERE idHabitacion = OLD.idHabitacion;
-    
-    DELETE FROM datospersonales
-    WHERE iddatospersonales = OLD.iddatospersonales;
 END //
 DELIMITER ;
 
 DELIMITER //
-CREATE TRIGGER on_update_paciente
-BEFORE UPDATE ON paciente
+CREATE TRIGGER on_update_estancia
+BEFORE UPDATE ON estancia
 FOR EACH ROW
 BEGIN
 	IF OLD.idHabitacion <> NEW.idHabitacion THEN

@@ -139,7 +139,7 @@ class TableViewer(ttk.Frame):
 	def item_selected(self, event):
 		selected_elements = len(self.table.selection())
 		self.switch_btn_edit_active(selected_elements == 1)
-		self.switch_btn_delete_active(selected_elements >= 1)		
+		self.switch_btn_delete_active(selected_elements >= 1)
 
 	def update_table(self, items=None):
 		for i in self.table.get_children():
@@ -176,9 +176,11 @@ class TableViewer(ttk.Frame):
 		columns = self.columns[:]
 		if self.table_name == 'habitacion':
 			columns.pop()
+		index = list(self.table.get_children()).index(self.table.selection()[0])
+		id = self.table_ids[index]
 
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, self, self.controller.db, self.table_name, columns, self.column_names, 'edit', curr_values)
+		DataWindow(nw, self, self.controller.db, self.table_name, columns, self.column_names, 'edit', id, curr_values)
     
 	def delete(self):
 		table_rows = self.table.get_children()

@@ -50,17 +50,24 @@ void loop() {
   if(Serial.available() > 0){
     char comm = Serial.read();
     switch(comm){
-      //Acceso concedido
-      case '1':
-        show_access(true);
-        break;
-      //Acceso denegado
-      case '0':
-        show_access(false);
-        break;
       //Beep
       case '2':
         beep(2);
+        break;
+      //Chao
+      case '3':
+        show_access(true, "ADIOS :)");
+        break;
+      //Acceso concedido
+      case '1':
+        show_access(true, "PASE USTED");
+        break;
+      //Acceso denegado
+      case '0':
+        show_access(false, "NO PASARA");
+        String msg = Serial.readString();
+        display.print(msg);
+        display.display();
         break;
     }
   }
@@ -68,7 +75,7 @@ void loop() {
   //Black magic type shit lmao
   if(displaying){
     unsigned long curr_millis = millis();
-    if(curr_millis - prev_millis >= 10000){
+    if(curr_millis - prev_millis >= 8000){
       displaying = false;
       oled_clear();
     }
@@ -81,11 +88,14 @@ void loop() {
         code += byte_to_hex(sensor.uid.uidByte[i]);
       }
 
+      /*
+      //DEBUG
       show_access(true);
       delay(500);
       show_access(false);
       delay(500);
       beep(4);
+      */
 
       Serial.print(code);
       Serial.println();
@@ -108,10 +118,10 @@ void oled_clear(){
   display.display();
 }
 
-void show_access(bool valid){
+void show_access(bool valid, String text){
   digitalWrite(BUZZ, HIGH);
   digitalWrite(valid ? LED_GREEN : LED_RED, HIGH);
-  oled_display(valid ? "PASE USTED" : "NO PASARA");
+  oled_display(text);
   delay(500);
   digitalWrite(valid ? LED_GREEN : LED_RED, LOW);
   digitalWrite(BUZZ, LOW);

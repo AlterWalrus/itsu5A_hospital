@@ -42,3 +42,4 @@ VIEW `view_visitas` AS
         `med`.`idMedico` IS NOT NULL
             OR `vis`.`idVisitante` IS NOT NULL
             OR `enf`.`idEnfermero` IS NOT NULL
+	ORDER BY `v`.`idVisita`

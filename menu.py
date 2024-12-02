@@ -129,8 +129,8 @@ class MainMenu(ttk.Frame):
 		self.cnv_today.config(width=w, height=h)
 
 		curr_hour = len(self.today_data)
-		lnw = round(w*0.04)		#16, these numbers in the  comments are the result of the mul assuming w and h are 400 and 240
-		lnh = round(h*0.833)	#200 and yes, the numbers were calculated by hand with my phone, sorry future's isra for this mess
+		lnw = round(w*0.04)		#16, la multiplicacion de 400 * 0.04 debe dar 16, eso significan los numeros
+		lnh = round(h*0.833)	#200 si, fueron calculados a mano... perdon isra del futuro
 		tdy_max = max(max(self.today_data), 1)
 		margin = 20
 
