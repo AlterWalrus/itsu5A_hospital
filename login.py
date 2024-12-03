@@ -68,8 +68,10 @@ class Login(ttk.Frame):
 	def admin_edit(self):
 		admin = self.btn_admin_selection['text']
 		pswd = self.admin_pswd[self.btn_admin_selection['text']]
+		print(admin)
+		print(pswd)
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), ('Nombre', 'Contraseña'), 'edit', (admin, pswd))
+		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), ('Nombre', 'Contraseña'), 'edit', curr_values=(admin, pswd))
 	
 	def admin_delete(self):
 		id = self.controller.db.get_id('admin', 'nombre', self.btn_admin_selection['text'])

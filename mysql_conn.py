@@ -43,7 +43,6 @@ class MySQL_Conn:
 		try:
 			self.dbcursor.execute(query, (id_patient, id_room))
 			self.conn.commit()
-			print(f"query exitosa: {query}: {id_patient}, {id_room}")
 		except Error as e:
 			print(f"Error en MySQL: {e}")
 
@@ -53,7 +52,6 @@ class MySQL_Conn:
 		try:
 			self.dbcursor.execute(query, (id_room, id_patient))
 			self.conn.commit()
-			print(f"query exitosa: {query}: {id_patient}, {id_room}")
 		except Error as e:
 			print(f"Error en MySQL: {e}")
 	
@@ -63,7 +61,6 @@ class MySQL_Conn:
 		try:
 			self.dbcursor.execute(query, (id_patient,))
 			self.conn.commit()
-			print(f"query exitosa: {query}: {id_patient}")
 		except Error as e:
 			print(f"Error en MySQL: {e}")
 
@@ -88,7 +85,8 @@ class MySQL_Conn:
 		for arg in args_names:
 			changes_list.append(f" {arg} = %s")
 		changes = ','.join(changes_list)
-		query = f"UPDATE {table_name} SET{changes} WHERE id{table_name} = {id};"
+		query = f"UPDATE {table_name} SET{changes} WHERE id{table_name} = %s;"
+		args_values.append(id)
 		try:
 			self.dbcursor.execute(query, args_values)
 			self.conn.commit()
@@ -165,25 +163,18 @@ class MySQL_Conn:
 			for u in own_columns:
 				query += f" {table_alias}.{u},"
 		else:
-			for u in own_columns:
-				query += f" {u}"
-				if u != own_columns[-1]:
-					query += ","
+			query += ','.join([f" {u}" for u in own_columns])
 
 		joins = ""
 		for fk in foreign_keys:
 			fk_table = fk[2:]
 			fk_alias = fk_table[0:2]
-
 			own_columns = self.only_own_columns(self.get_columns(fk_table))
-			for u in own_columns:
-				query += f" {fk_alias}.{u}"
-				if u != own_columns[-1] or fk != foreign_keys[-1]:
-					query += ","
-			
+			query += ','.join([f" {fk_alias}.{u}" for u in own_columns])
+			if fk != foreign_keys[-1]:
+				query += ','
 			joins += f" INNER JOIN {fk_table} {fk_alias} ON {table_alias}.{fk} = {fk_alias}.{fk}"
 		query += f" FROM {table_name} {table_alias}{joins};" if not has_foreign_keys else f" FROM {table_name} {where};"
-
 		try:
 			self.dbcursor.execute(query)
 			if getcolumns:

@@ -42,4 +42,4 @@ class tkinterApp(ttk.Window):
 		frame.tkraise()
 
 app = tkinterApp()
-app.mainloop()
+app.mainloop() 

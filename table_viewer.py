@@ -178,6 +178,7 @@ class TableViewer(ttk.Frame):
 			columns.pop()
 		index = list(self.table.get_children()).index(self.table.selection()[0])
 		id = self.table_ids[index]
+		print(id)
 
 		nw = ttk.Toplevel(self)
 		DataWindow(nw, self, self.controller.db, self.table_name, columns, self.column_names, 'edit', id, curr_values)

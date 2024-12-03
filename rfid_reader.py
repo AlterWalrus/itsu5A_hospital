@@ -65,7 +65,6 @@ class RFID_Reader:
 		#Se hace el check in
 		self.checkin(room_id, patient_id, code)
 
-
 	def checkin(self, room_id, patient_id, code):
 		if code in self.entrance_time.keys():
 			now = datetime.today().replace(microsecond=0)
@@ -75,11 +74,13 @@ class RFID_Reader:
 			self.parent.frames['Visitas'].update_table()
 			self.entrance_time.pop(code, None)
 			self.reader.write('3'.encode())
-			print("ADIOS uwu")
+
+			self.parent.frames['MainMenu'].week_data[-1] += 1
+			self.parent.frames['MainMenu'].today_data[-1] += 1
+			self.parent.frames['MainMenu'].after_resize()
 		else:
 			self.entrance_time[code] = datetime.today().replace(microsecond=0)
 			self.reader.write('1'.encode())
-			print("HOLIS owo")
 
 	def process_data(self, data):
 		if self.mode == 1:

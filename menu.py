@@ -110,7 +110,7 @@ class MainMenu(ttk.Frame):
 
 		self.cnv_rooms = ttk.Canvas(fr_sub, height=180, width=640)
 		self.cnv_rooms.grid(row=0, column=1, padx=10, pady=10, sticky='nsew')
-		#self.draw_rooms_state(400, 240)
+		self.draw_rooms_state(640, 180)
 
 		self.controller.bind('<Configure>', self.resizing)
 
@@ -119,10 +119,10 @@ class MainMenu(ttk.Frame):
 		self.cnv_rooms.config(width=w, height=h)
 		patient_data = self.controller.db.get_table('paciente')
 		
-		for pd in patient_data:
+		'''for pd in patient_data:
 			room = pd[10]
 			if room != 'ALTA':
-				print(room)
+				print(room)'''
 		
 	def draw_today_stats(self, w, h):
 		self.cnv_today.delete(ttk.ALL)

@@ -128,7 +128,10 @@ class DataWindow(ttk.Frame):
 						self.alert['text'] = "Código RFID ya registrado."
 						return False
 				else:
+					print(self.id)
+					print(self.db.get_table(self.table_name, id=self.id))
 					code_in_db = self.db.get_table(self.table_name, id=self.id)[0][-1]
+					print(code_in_db)
 					codes = [c[0] for c in self.db.get_table('codigoRFID')]
 					if value in codes and value != code_in_db:
 						self.alert['text'] = "Código RFID ya registrado."
@@ -196,13 +199,11 @@ class DataWindow(ttk.Frame):
 		if not self.data_is_valid():
 			return
 		
-		state = {
-			'ALTA': 1,
-			'INTERNADO': 2
-		}
+		state = { 'ALTA': 1, 'INTERNADO': 2 }
 		
-		#Conseguir los IDs de las weas a actualizar
-		#print(self.db.get_raw_data(self.table_name, self.id))
+		#Conseguir los IDs de las FKs de las weas a actualizar
+		data = self.db.get_raw_data(self.table_name, self.id)
+		print(data)
 		
 		#Separar columnas propias y FKs
 		fks = []
@@ -214,20 +215,16 @@ class DataWindow(ttk.Frame):
 				own_fields.append(col)
 
 		patient_in_room = self.db.get_id_from_room(self.id)
-		print(patient_in_room)
 		if 'estado' in self.entries.keys():
 			if self.entries['estado'].get() == 'INTERNADO':
 				room_id = self.db.get_id('Habitacion', 'nombreHabitacion', self.entries['nombreHabitacion'].get())
 				if patient_in_room != -1:
 					self.db.update_from_room(self.id, room_id)
-					print("paciente en habitacion, estancia editada")
 				else:
 					self.db.insert_into_room(self.id, room_id)
-					print("paciente NO en habitacion, estancia insertada")
 			else:
 				if patient_in_room != -1:
 					self.db.delete_from_room(self.id)
-					print("moviendo paciente de la habitacion, estancia borrada")
 		
 		#Obtener valores para columnas propias
 		if self.table_name == 'habitacion':
@@ -239,8 +236,9 @@ class DataWindow(ttk.Frame):
 				continue
 			values.append(self.entries[f].get())
 
-		#Actualizar datos propios
-		self.db.update(self.table_name, self.id, own_fields, values)
+		#Actualizar datos propios, si es q los hay
+		if len(own_fields) > 0:
+			self.db.update(self.table_name, self.id, own_fields, values)
 		self.close()
 
 	def close(self):
