@@ -2,6 +2,8 @@ import ttkbootstrap as ttk
 from datetime import datetime
 from math import ceil
 
+#"A shitty structure causes shitty problems, which require shitty solutions"
+
 def center_window(w):
 	w.master.update_idletasks()
 	x_center = w.origin.controller.winfo_x() + (w.origin.controller.winfo_width()//2) - (w.master.winfo_reqwidth()//2)
@@ -128,10 +130,7 @@ class DataWindow(ttk.Frame):
 						self.alert['text'] = "Código RFID ya registrado."
 						return False
 				else:
-					print(self.id)
-					print(self.db.get_table(self.table_name, id=self.id))
 					code_in_db = self.db.get_table(self.table_name, id=self.id)[0][-1]
-					print(code_in_db)
 					codes = [c[0] for c in self.db.get_table('codigoRFID')]
 					if value in codes and value != code_in_db:
 						self.alert['text'] = "Código RFID ya registrado."
@@ -142,6 +141,11 @@ class DataWindow(ttk.Frame):
 					int(value)
 				except:
 					self.alert['text'] = f"{self.field_names[i]} debe ser un número."
+					return False
+				
+			if field == 'maxVisitas':
+				if int(value) < 1:
+					self.alert['text'] = f"Máximo de visitas inválido."
 					return False
 
 			if field == 'fechaNacimiento':
@@ -162,12 +166,14 @@ class DataWindow(ttk.Frame):
 	def confirm_insert(self):
 		if not self.data_is_valid():
 			return
+		
+		state = { 'ALTA': 1, 'INTERNADO': 2 }
 
 		#Separar columnas propias y FKs
 		fks = []
 		own_fields = []
 		for col in self.db.get_columns(self.table_name)[1:]:
-			if col.startswith('id'):
+			if col.startswith('id') and col != 'idEstadoPaciente':
 				fks.append(col)
 			else:
 				own_fields.append(col)
@@ -187,12 +193,22 @@ class DataWindow(ttk.Frame):
 		#Obtener valores para columnas propias
 		values = []
 		for f in own_fields:
+			if f == 'idEstadoPaciente':
+				values.append(state[self.entries['estado'].get()])
+				continue
 			values.append(self.entries[f].get())
 
 		own_fields.extend(fks_dict.keys())
 		values.extend(fks_dict.values())
 
-		self.db.insert_into(self.table_name, own_fields, values)
+		last_id = self.db.insert_into(self.table_name, own_fields, values)
+
+		#Añadir la estancia si es que se trata de un paciente
+		if 'estado' in self.entries.keys():
+			if self.entries['estado'].get() == 'INTERNADO':
+				room_id = self.db.get_id('Habitacion', 'nombreHabitacion', self.entries['nombreHabitacion'].get())
+				self.db.insert_into_room(last_id, room_id)
+
 		self.close()
 
 	def confirm_update(self):
@@ -200,10 +216,6 @@ class DataWindow(ttk.Frame):
 			return
 		
 		state = { 'ALTA': 1, 'INTERNADO': 2 }
-		
-		#Conseguir los IDs de las FKs de las weas a actualizar
-		data = self.db.get_raw_data(self.table_name, self.id)
-		print(data)
 		
 		#Separar columnas propias y FKs
 		fks = []
@@ -239,6 +251,27 @@ class DataWindow(ttk.Frame):
 		#Actualizar datos propios, si es q los hay
 		if len(own_fields) > 0:
 			self.db.update(self.table_name, self.id, own_fields, values)
+
+		#Conseguir los IDs de las FKs de las weas a actualizar
+		if self.table_name == 'paciente':
+			#Este esta hardcoded porque tengo frio, sueño y no hay tiempo de pensar una mejor solucion
+			#Solo toma el ID de la tabla datos personales en la posicion 6
+			fks_ids = self.db.get_raw_data(self.table_name, self.id)[6:7]
+		else:
+			#Se le quita el numero de campos propios + 1 para quitar tambien la columna de ID
+			fks_ids = self.db.get_raw_data(self.table_name, self.id)[len(own_fields)+1:]
+
+		#Actualizar valores con FKs
+		i = 0
+		for f in fks:
+			#A f le quitamos los primeros 2 chars por el prefijo de 'id', luego de las columnas omitimos el id (lmao nadie qiere al ID)
+			table_name = f[2:]
+			cols = self.db.get_columns(table_name)[1:]
+			values = []
+			for c in cols:
+				values.append(self.entries[c].get())
+			self.db.update(table_name, fks_ids[i], cols, values)
+			i += 1
 		self.close()
 
 	def close(self):

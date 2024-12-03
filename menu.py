@@ -2,7 +2,6 @@ import ttkbootstrap as ttk
 import datetime
 from PIL import Image, ImageTk
 from data_window import AnalysisWindow
-from room import Room
 import random
 
 class MainMenu(ttk.Frame):
@@ -91,7 +90,7 @@ class MainMenu(ttk.Frame):
 
 		self.cnv_week = ttk.Canvas(fr_sub, height=240, width=360)
 		self.cnv_week.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
-		self.week_data = [random.randint(0, 100) for i in range(7)]
+		self.week_data = [random.randint(0, 20) for i in range(7)]
 		self.draw_week_stats(360, 240)
 
 		#Grafica de hoy
@@ -99,8 +98,8 @@ class MainMenu(ttk.Frame):
 		fr_sub.grid(row=0, column=1, padx=10, pady=10, sticky='nsew')
 
 		self.cnv_today = ttk.Canvas(fr_sub, height=240, width=400)
-		self.cnv_today.grid(row=0, column=1, padx=10, pady=10, sticky='nsew')
-		self.today_data = [random.randint(0, 20) for i in range(datetime.datetime.today().hour+1)]
+		self.cnv_today.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+		self.today_data = [random.randint(0, i//2) for i in range(datetime.datetime.today().hour+1)]
 		print(self.today_data)
 		self.draw_today_stats(400, 240)
 
@@ -108,21 +107,31 @@ class MainMenu(ttk.Frame):
 		fr_sub = ttk.LabelFrame(fr, text="Visitas en tiempo real")
 		fr_sub.grid(row=1, column=0, padx=10, pady=10, sticky='nsew', columnspan=2, rowspan=2)
 
-		self.cnv_rooms = ttk.Canvas(fr_sub, height=180, width=640)
-		self.cnv_rooms.grid(row=0, column=1, padx=10, pady=10, sticky='nsew')
-		self.draw_rooms_state(640, 180)
+		self.cnv_rooms = ttk.Canvas(fr_sub, height=180, width=760)
+		self.cnv_rooms.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+		self.room_visitors = {}
+		rooms_data = self.controller.db.get_table('habitacion')
+		for r in rooms_data:
+			self.room_visitors[r[0]] = 0
+		self.draw_rooms_state(760, 180)
 
 		self.controller.bind('<Configure>', self.resizing)
 
 	def draw_rooms_state(self, w, h):
 		self.cnv_rooms.delete(ttk.ALL)
 		self.cnv_rooms.config(width=w, height=h)
-		patient_data = self.controller.db.get_table('paciente')
-		
-		'''for pd in patient_data:
-			room = pd[10]
-			if room != 'ALTA':
-				print(room)'''
+		margin = 20
+
+		rooms_oc = self.controller.db.get_raw_table('estancia')
+		for i in range(len(rooms_oc)):
+			patient_data = self.controller.db.get_table('paciente', id=rooms_oc[i][0])[0]
+			patient_name = ' '.join(patient_data[5:8])
+			room_data = self.controller.db.get_table('habitacion', id=rooms_oc[i][1])[0]
+
+			self.cnv_rooms.create_image(margin, i*32+margin-4, image=self.img_room)
+			self.cnv_rooms.create_text(margin+32, i*32+margin, text=room_data[0], fill='white', justify='left', font=('Helvetica', 10, 'bold'))
+			self.cnv_rooms.create_text(margin+64, i*32+margin, text=patient_name, fill='white', justify='left', anchor='w')
+			self.cnv_rooms.create_text(margin+320, i*32+margin, text=f"{self.room_visitors[room_data[0]]}/{patient_data[0]}", fill='white', justify='left', anchor='w', font=('Helvetica', 10, 'bold'))
 		
 	def draw_today_stats(self, w, h):
 		self.cnv_today.delete(ttk.ALL)
@@ -135,10 +144,14 @@ class MainMenu(ttk.Frame):
 		margin = 20
 
 		self.cnv_today.create_line(margin, 20, w, 20, fill='white')
-		self.cnv_today.create_line(margin, (lnh+20)/2, w, (lnh+20)/2, fill='gray')
 		self.cnv_today.create_line(margin, lnh, w, lnh, fill='white')
 		
-		self.cnv_today.create_text(10, 20, text=tdy_max, fill='white', justify='left', font=('Helvetica', 10, 'bold'))
+		self.cnv_today.create_text(14, 20, text=tdy_max, fill='white', justify='left', font=('Helvetica', 8, 'bold'))
+		mid_y = (lnh+20)/2
+		if tdy_max % 2 != 0:
+			mid_y += (lnh/tdy_max)/2
+		self.cnv_today.create_text(14, mid_y, text=tdy_max//2, fill='white', justify='left', font=('Helvetica', 8, 'bold'))
+		self.cnv_today.create_line(margin, mid_y, w, mid_y, fill='gray')
 
 		for i in range(1, curr_hour):
 			y1 = lnh - (self.today_data[i-1]/tdy_max) * (lnh*0.9)
@@ -174,7 +187,7 @@ class MainMenu(ttk.Frame):
 		h = self.controller.winfo_height()
 		self.draw_week_stats(round(w*0.323), round(h*0.363))
 		self.draw_today_stats(round(w*0.359), round(h*0.363))
-		self.draw_rooms_state(round(w*0.5745), round(h*0.273))
+		self.draw_rooms_state(round(w*0.6822), round(h*0.273))
 
 	def resizing(self, event):
 		if event.widget == self.controller:

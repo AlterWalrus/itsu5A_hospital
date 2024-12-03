@@ -1,6 +1,6 @@
 import serial
 import threading
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from time import sleep
 import serial.tools.list_ports
 
@@ -10,6 +10,8 @@ class RFID_Reader:
 		self.reader = None
 		self.thread = None
 		self.connected = False
+
+		self.room_name = 'A1'
 
 		self.mode = 1
 		self.target_window = None
@@ -46,8 +48,7 @@ class RFID_Reader:
 			return
 
 		#Revisar si hay alguien en la habitacion hospedado en primer lugar
-		room = 'A1'
-		room_id = self.parent.db.get_id('Habitacion', 'nombreHabitacion', room)
+		room_id = self.parent.db.get_id('Habitacion', 'nombreHabitacion', self.room_name)
 		patient_id = self.parent.db.get_id_from_room(room_id, get_room=False)
 		
 		if patient_id == -1:
@@ -62,6 +63,44 @@ class RFID_Reader:
 			self.checkin(room_id, patient_id, code)
 			return
 
+		#Validaciones para ver al paciente
+		patient_data = self.parent.db.get_table('paciente', id=patient_id)[0]
+		max_visits = patient_data[0]
+		curr_visits = self.parent.frames['MainMenu'].room_visitors[self.room_name]
+		min_age = patient_data[1]
+		max_age = patient_data[2]
+		min_time:timedelta = patient_data[3]
+		max_time = patient_data[4]
+
+		if curr_visits >= max_visits:
+			self.reader.write('0'.encode())
+			self.reader.write(f"Limite de visitas: {max_visits}".encode())
+			return
+
+		raw_age = rfid_owner['fechaNacimiento']
+		today = date.today()
+		visitor_age = today.year - raw_age.year - ((today.month, today.day) < (raw_age.month, raw_age.day))
+
+		if visitor_age < min_age:
+			self.reader.write('0'.encode())
+			self.reader.write("Minimo de edad".encode())
+			return
+		
+		if visitor_age > max_age:
+			self.reader.write('0'.encode())
+			self.reader.write("Maximo de edad".encode())
+			return
+		
+		now = datetime.now()
+		start_of_day = datetime.combine(now.date(), datetime.min.time())
+		min_time_dt = start_of_day + min_time
+		max_time_dt = start_of_day + max_time
+		
+		if now > max_time_dt or now < min_time_dt:
+			self.reader.write('0'.encode())
+			self.reader.write(f"Hor: {str(min_time)[:-3]}\n{str(max_time)[:-3]}".encode())
+			return
+
 		#Se hace el check in
 		self.checkin(room_id, patient_id, code)
 
@@ -69,7 +108,6 @@ class RFID_Reader:
 		if code in self.entrance_time.keys():
 			now = datetime.today().replace(microsecond=0)
 			id_code = self.parent.db.get_id('CodigoRFID', 'codigoRFID', code)
-			print(f"{self.entrance_time[code]} - {now} - {1} - {id_code}")
 			self.parent.db.insert_into('visita', ('entrada', 'salida', 'idHabitacion', 'idPaciente', 'idCodigoRFID'), (self.entrance_time[code], now, room_id, patient_id, id_code))
 			self.parent.frames['Visitas'].update_table()
 			self.entrance_time.pop(code, None)
@@ -77,10 +115,12 @@ class RFID_Reader:
 
 			self.parent.frames['MainMenu'].week_data[-1] += 1
 			self.parent.frames['MainMenu'].today_data[-1] += 1
-			self.parent.frames['MainMenu'].after_resize()
+			self.parent.frames['MainMenu'].room_visitors[self.room_name] -= 1
 		else:
+			self.parent.frames['MainMenu'].room_visitors[self.room_name] += 1
 			self.entrance_time[code] = datetime.today().replace(microsecond=0)
 			self.reader.write('1'.encode())
+		self.parent.frames['MainMenu'].after_resize()
 
 	def process_data(self, data):
 		if self.mode == 1:
@@ -93,7 +133,6 @@ class RFID_Reader:
 			self.target_window.switch_rfid_mode()
 			self.mode = 1
 			self.reader.write('2'.encode())
-			print("BEEP")
 		
 		elif self.mode == 3:
 			self.target_window.lb_rfid['text'] = f"Codigo RFID: {data}"

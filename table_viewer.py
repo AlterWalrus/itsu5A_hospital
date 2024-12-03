@@ -36,7 +36,15 @@ class TableViewer(ttk.Frame):
 			'edadMin': 'Edad Min.',
 			'edadMax': 'Edad Max.',
 			'nombreHabitacion': 'Habitación',
-			'estado': 'Estado'
+			'estado': 'Estado',
+			'visitaRFID': 'Código RFID',
+			'visitaNombre': 'Visita. Nombre',
+			'visitaApellido': 'Visita. Apellido',
+			'entrada': 'Entrada',
+			'salida': 'Salida',
+			'pacienteHabitacion': 'Habitación',
+			'pacienteNombre': 'Paciente Nombre',
+			'pacienteApellido': 'Paciente Apellido',
 		}
 
 		#Filtrar (exclusivo de visitas!!!)
@@ -78,7 +86,8 @@ class TableViewer(ttk.Frame):
 		#Editar
 		self.img_edit = ImageTk.PhotoImage(Image.open('images/edit.png'))
 		self.btn_edit = ttk.Button(fr_actions, image=self.img_edit, compound='left', width=12, text='Editar', command=self.open_edit, state='disabled')
-		self.btn_edit.grid(row=0, column=1, padx=10, pady=10)
+		if self.table_name != 'visita':
+			self.btn_edit.grid(row=0, column=1, padx=10, pady=10)
         
 		#Eliminar
 		self.img_delete = ImageTk.PhotoImage(Image.open('images/delete.png'))
@@ -178,7 +187,6 @@ class TableViewer(ttk.Frame):
 			columns.pop()
 		index = list(self.table.get_children()).index(self.table.selection()[0])
 		id = self.table_ids[index]
-		print(id)
 
 		nw = ttk.Toplevel(self)
 		DataWindow(nw, self, self.controller.db, self.table_name, columns, self.column_names, 'edit', id, curr_values)

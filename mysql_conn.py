@@ -174,7 +174,7 @@ class MySQL_Conn:
 			if fk != foreign_keys[-1]:
 				query += ','
 			joins += f" INNER JOIN {fk_table} {fk_alias} ON {table_alias}.{fk} = {fk_alias}.{fk}"
-		query += f" FROM {table_name} {table_alias}{joins};" if not has_foreign_keys else f" FROM {table_name} {where};"
+		query += f" FROM {table_name} {table_alias}{joins} {where};" if not has_foreign_keys else f" FROM {table_name} {where};"
 		try:
 			self.dbcursor.execute(query)
 			if getcolumns:
