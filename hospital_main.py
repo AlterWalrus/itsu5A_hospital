@@ -31,8 +31,8 @@ class tkinterApp(ttk.Window):
 
 		self.reader = RFID_Reader(self)
 
-		#self.show_frame('Login')
-		self.show_frame('MainMenu')
+		self.show_frame('Login')
+		#self.show_frame('MainMenu')
         
 	def show_frame(self, cont):
 		self.reader.update_valid_codes()

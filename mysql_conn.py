@@ -188,7 +188,9 @@ class MySQL_Conn:
 		query = f"SELECT id{table_name} FROM {table_name} WHERE {field} = %s;"
 		try:
 			self.dbcursor.execute(query, (value,))
-			return self.dbcursor.fetchall()[0][0]
+			result = self.dbcursor.fetchall()
+			if len(result) > 0:
+				return result[0][0]
 		except Error as e:
 			print(f"Error en MySQL: {e}")
 		return -1

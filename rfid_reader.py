@@ -59,7 +59,7 @@ class RFID_Reader:
 		#Si se es medico las demas validaciones son burladas
 		rfid_id = self.parent.db.get_id('CodigoRFID', 'codigoRFID', code)
 		rfid_owner = self.parent.db.get_rfid_owner(rfid_id)
-		if 'cedula' in rfid_owner:
+		if 'cedula' in rfid_owner or code in self.entrance_time.keys():
 			self.checkin(room_id, patient_id, code)
 			return
 
@@ -83,12 +83,12 @@ class RFID_Reader:
 
 		if visitor_age < min_age:
 			self.reader.write('0'.encode())
-			self.reader.write("Minimo de edad".encode())
+			self.reader.write(f"Minimo de edad: {min_age}".encode())
 			return
 		
 		if visitor_age > max_age:
 			self.reader.write('0'.encode())
-			self.reader.write("Maximo de edad".encode())
+			self.reader.write(f"Maximo de edad: {max_age}".encode())
 			return
 		
 		now = datetime.now()

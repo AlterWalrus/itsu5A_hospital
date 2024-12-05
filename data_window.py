@@ -279,6 +279,8 @@ class DataWindow(ttk.Frame):
 			self.origin.update_table()
 		if hasattr(self.origin, 'update_admin_list'):
 			self.origin.update_admin_list()
+			if self.mode == 'edit':
+				self.origin.controller.frames['MainMenu'].admin_curr['text'] = self.entries['nombreAdmin'].get()
 
 		if self.btn_rfid:
 			if self.btn_rfid['text'] == "Esperando...":
@@ -307,7 +309,11 @@ class ConfirmationWindow(ttk.Frame):
 	
 	def accept(self):
 		self.db.delete(self.origin.table_name, self.ids)
-		self.origin.update_table()
+		if hasattr(self.origin, 'update_table'):
+			self.origin.update_table()
+		if hasattr(self.origin, 'update_admin_list'):
+			self.origin.update_admin_list()
+			self.origin.back_to_login()
 		self.close()
 
 	def close(self):
@@ -343,4 +349,26 @@ class AnalysisWindow(ttk.Frame):
 
 	def close(self):
 		self.rfid.mode = 1
+		self.master.destroy()
+
+class ErrorWindow(ttk.Frame):
+	def __init__(self, parent, origin):
+		super().__init__(parent)
+		self.master.iconbitmap("images/icon_dark.ico")
+		self.origin = origin
+
+		self.lb_title = ttk.Label(self, text="Error", foreground='#ff5555', font=('Helvetica', 16, 'bold'))
+		self.lb_title.pack(padx=60, pady=10)
+		self.lb_info = ttk.Label(self, text="No se puede eliminar al único Administrador.", font=('Helvetica', 12))
+		self.lb_info.pack(padx=10, pady=10)
+
+		self.pack(fill='x', expand=True)
+		self.master.title(f"Error")
+		self.btn_ok = ttk.Button(self, width=10, text="Cancelar", command=self.close)
+		self.btn_ok.pack(padx=10, pady=10)
+
+		self.grab_set()
+		center_window(self)
+
+	def close(self):
 		self.master.destroy()

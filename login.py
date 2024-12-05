@@ -1,6 +1,6 @@
 import ttkbootstrap as ttk
 import threading
-from data_window import DataWindow, ConfirmationWindow
+from data_window import DataWindow, ConfirmationWindow, ErrorWindow
 from PIL import Image, ImageTk
 
 class Login(ttk.Frame):
@@ -50,16 +50,28 @@ class Login(ttk.Frame):
 
 		frame.pack(anchor='center')
 		ttk.Frame(self).pack(expand=True)
-	
+
+	def back_to_login(self):
+		self.controller.show_frame('Login')
+
 	def update_admin_list(self):
+		#En insercion y actualizacion recuperamos el indice anterior para que este seleccionado al volver al login
+		old_index = 0
+		old_admin_exists = self.controller.db.get_id('admin', 'nombreAdmin', self.btn_admin_selection['text']) != -1
+		if self.btn_admin_selection['text'] != '' and old_admin_exists:
+			old_index = list(self.admin_pswd).index(self.btn_admin_selection['text'])
+		
+		#Ahora si actualizamos
+		self.admin_pswd = {}
 		admin_table = self.controller.db.get_table('admin')
 		for i in admin_table:
-			self.admin_pswd[i[0]] = i[1]
+			self.admin_pswd[i[0]] = i[1] 
 		
 		menu = ttk.Menu(self.btn_admin_selection)
 		for admin in self.admin_pswd:
 			menu.add_radiobutton(label=admin, value=admin, command=lambda c=admin: self.update_admin_btn(c))
-		self.btn_admin_selection.config(menu=menu, text=list(self.admin_pswd)[0])
+
+		self.btn_admin_selection.config(menu=menu, text=list(self.admin_pswd)[old_index])
 	
 	def admin_add(self):
 		nw = ttk.Toplevel(self)
@@ -68,13 +80,18 @@ class Login(ttk.Frame):
 	def admin_edit(self):
 		admin = self.btn_admin_selection['text']
 		pswd = self.admin_pswd[self.btn_admin_selection['text']]
-		print(admin)
-		print(pswd)
+		id = self.controller.db.get_id('admin', 'nombreAdmin', self.btn_admin_selection['text'])
 		nw = ttk.Toplevel(self)
-		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), ('Nombre', 'Contraseña'), 'edit', curr_values=(admin, pswd))
+		DataWindow(nw, self, self.controller.db, 'Admin', ('nombreAdmin', 'contrasenia'), ('Nombre', 'Contraseña'), 'edit', id=id, curr_values=(admin, pswd))
 	
 	def admin_delete(self):
-		id = self.controller.db.get_id('admin', 'nombre', self.btn_admin_selection['text'])
+		id = self.controller.db.get_id('admin', 'nombreAdmin', self.btn_admin_selection['text'])
+
+		if len(self.admin_pswd) == 1:
+			nw = ttk.Toplevel(self)
+			ErrorWindow(nw, self)
+			return
+
 		nw = ttk.Toplevel(self)
 		ConfirmationWindow(nw, self, self.controller.db, 1, (id,))
 
